@@ -91,3 +91,7 @@ points checked in October 2026. State pensions, other retirement income and spen
 bad years are not modelled.
 
 This is a planning simulation, not financial advice.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
