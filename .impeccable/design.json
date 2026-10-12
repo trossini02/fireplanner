@@ -1,0 +1,563 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-12T11:17:20+00:00",
+  "title": "Design System: PAC FIRE Planner",
+  "extensions": {
+    "colorMeta": {
+      "graphite-ground": {
+        "role": "neutral",
+        "displayName": "Graphite Ground",
+        "canonical": "#0f1113",
+        "tonalRamp": [
+          "#0f1113",
+          "#16191c",
+          "#1d2125",
+          "#262b31",
+          "#434a52",
+          "#68717b",
+          "#9aa2ab",
+          "#e3e6e9"
+        ]
+      },
+      "graphite-panel": {
+        "role": "neutral",
+        "displayName": "Graphite Panel",
+        "canonical": "#16191c",
+        "tonalRamp": [
+          "#0f1113",
+          "#16191c",
+          "#1d2125",
+          "#262b31",
+          "#434a52",
+          "#68717b",
+          "#9aa2ab",
+          "#e3e6e9"
+        ]
+      },
+      "graphite-hover": {
+        "role": "neutral",
+        "displayName": "Graphite Hover",
+        "canonical": "#1d2125",
+        "tonalRamp": [
+          "#0f1113",
+          "#16191c",
+          "#1d2125",
+          "#262b31",
+          "#434a52",
+          "#68717b",
+          "#9aa2ab",
+          "#e3e6e9"
+        ]
+      },
+      "graphite-raised": {
+        "role": "neutral",
+        "displayName": "Graphite Raised",
+        "canonical": "#262b31",
+        "tonalRamp": [
+          "#0f1113",
+          "#16191c",
+          "#1d2125",
+          "#262b31",
+          "#434a52",
+          "#68717b",
+          "#9aa2ab",
+          "#e3e6e9"
+        ]
+      },
+      "seam": {
+        "role": "neutral",
+        "displayName": "Seam",
+        "canonical": "#2a2f35",
+        "tonalRamp": [
+          "#0f1113",
+          "#16191c",
+          "#1d2125",
+          "#262b31",
+          "#434a52",
+          "#68717b",
+          "#9aa2ab",
+          "#e3e6e9"
+        ]
+      },
+      "edge": {
+        "role": "neutral",
+        "displayName": "Edge",
+        "canonical": "#626b75",
+        "tonalRamp": [
+          "#0f1113",
+          "#16191c",
+          "#1d2125",
+          "#262b31",
+          "#434a52",
+          "#68717b",
+          "#9aa2ab",
+          "#e3e6e9"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#e3e6e9",
+        "tonalRamp": [
+          "#0f1113",
+          "#16191c",
+          "#1d2125",
+          "#262b31",
+          "#434a52",
+          "#68717b",
+          "#9aa2ab",
+          "#e3e6e9"
+        ]
+      },
+      "ink-secondary": {
+        "role": "neutral",
+        "displayName": "Ink Secondary",
+        "canonical": "#a1aab3",
+        "tonalRamp": [
+          "#0f1113",
+          "#16191c",
+          "#1d2125",
+          "#262b31",
+          "#434a52",
+          "#68717b",
+          "#9aa2ab",
+          "#e3e6e9"
+        ]
+      },
+      "ink-tertiary": {
+        "role": "neutral",
+        "displayName": "Ink Tertiary",
+        "canonical": "#828c96",
+        "tonalRamp": [
+          "#0f1113",
+          "#16191c",
+          "#1d2125",
+          "#262b31",
+          "#434a52",
+          "#68717b",
+          "#9aa2ab",
+          "#e3e6e9"
+        ]
+      },
+      "signal-blue": {
+        "role": "primary",
+        "displayName": "Signal Blue",
+        "canonical": "#8ab4f8",
+        "tonalRamp": [
+          "#0d1a2e",
+          "#1b2737",
+          "#24426e",
+          "#3a64a3",
+          "#5a87cf",
+          "#8ab4f8",
+          "#b4cffb",
+          "#e2ecfe"
+        ]
+      },
+      "signal-blue-ink": {
+        "role": "primary",
+        "displayName": "Signal Blue Ink",
+        "canonical": "#0f1113",
+        "tonalRamp": [
+          "#0f1113",
+          "#16191c",
+          "#1d2125",
+          "#262b31",
+          "#434a52",
+          "#68717b",
+          "#9aa2ab",
+          "#e3e6e9"
+        ]
+      },
+      "signal-blue-wash": {
+        "role": "primary",
+        "displayName": "Signal Blue Wash",
+        "canonical": "#1b2737",
+        "tonalRamp": [
+          "#0d1a2e",
+          "#1b2737",
+          "#24426e",
+          "#3a64a3",
+          "#5a87cf",
+          "#8ab4f8",
+          "#b4cffb",
+          "#e2ecfe"
+        ]
+      },
+      "state-fresh": {
+        "role": "state",
+        "displayName": "Fresh",
+        "canonical": "#7fd49b",
+        "tonalRamp": [
+          "#0d2416",
+          "#173d26",
+          "#235c39",
+          "#33804f",
+          "#4fa96c",
+          "#7fd49b",
+          "#aee5c0",
+          "#ddf4e5"
+        ]
+      },
+      "state-stale": {
+        "role": "state",
+        "displayName": "Stale",
+        "canonical": "#e8b86a",
+        "tonalRamp": [
+          "#2a1e08",
+          "#45320f",
+          "#6b4e18",
+          "#936c24",
+          "#bd8f3e",
+          "#e8b86a",
+          "#f1d29f",
+          "#faeeda"
+        ]
+      },
+      "state-error": {
+        "role": "state",
+        "displayName": "Error",
+        "canonical": "#f28b82",
+        "tonalRamp": [
+          "#2e0f0d",
+          "#4d1a17",
+          "#782a25",
+          "#a63c35",
+          "#d1605a",
+          "#f28b82",
+          "#f7b6b0",
+          "#fce2df"
+        ]
+      },
+      "band-outer": {
+        "role": "neutral",
+        "displayName": "Outer Band",
+        "canonical": "#242a31",
+        "tonalRamp": [
+          "#0f1113",
+          "#16191c",
+          "#1d2125",
+          "#262b31",
+          "#434a52",
+          "#68717b",
+          "#9aa2ab",
+          "#e3e6e9"
+        ]
+      },
+      "band-inner": {
+        "role": "neutral",
+        "displayName": "Inner Band",
+        "canonical": "#3a424c",
+        "tonalRamp": [
+          "#0f1113",
+          "#16191c",
+          "#1d2125",
+          "#262b31",
+          "#434a52",
+          "#68717b",
+          "#9aa2ab",
+          "#e3e6e9"
+        ]
+      },
+      "ramp-1": {
+        "role": "neutral",
+        "displayName": "Grey Ramp 1",
+        "canonical": "#d5dade",
+        "tonalRamp": [
+          "#0f1113",
+          "#16191c",
+          "#1d2125",
+          "#262b31",
+          "#434a52",
+          "#68717b",
+          "#9aa2ab",
+          "#e3e6e9"
+        ]
+      },
+      "ramp-2": {
+        "role": "neutral",
+        "displayName": "Grey Ramp 2",
+        "canonical": "#9aa2ab",
+        "tonalRamp": [
+          "#0f1113",
+          "#16191c",
+          "#1d2125",
+          "#262b31",
+          "#434a52",
+          "#68717b",
+          "#9aa2ab",
+          "#e3e6e9"
+        ]
+      },
+      "ramp-3": {
+        "role": "neutral",
+        "displayName": "Grey Ramp 3",
+        "canonical": "#68717b",
+        "tonalRamp": [
+          "#0f1113",
+          "#16191c",
+          "#1d2125",
+          "#262b31",
+          "#434a52",
+          "#68717b",
+          "#9aa2ab",
+          "#e3e6e9"
+        ]
+      },
+      "ramp-4": {
+        "role": "neutral",
+        "displayName": "Grey Ramp 4",
+        "canonical": "#434a52",
+        "tonalRamp": [
+          "#0f1113",
+          "#16191c",
+          "#1d2125",
+          "#262b31",
+          "#434a52",
+          "#68717b",
+          "#9aa2ab",
+          "#e3e6e9"
+        ]
+      },
+      "dip-shade": {
+        "role": "neutral",
+        "displayName": "Dip Shade",
+        "canonical": "#23282e",
+        "tonalRamp": [
+          "#0f1113",
+          "#16191c",
+          "#1d2125",
+          "#262b31",
+          "#434a52",
+          "#68717b",
+          "#9aa2ab",
+          "#e3e6e9"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display figure",
+        "purpose": "Capital and monthly figures in each method column."
+      },
+      "display-sm": {
+        "displayName": "Display figure, small",
+        "purpose": "Secondary figures such as the wait-for-a-dip amount."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Product name in the top bar, used once."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Panel headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Verdicts and explanatory copy, 62-75ch."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Field labels, notes, legends, chips."
+      },
+      "pill": {
+        "displayName": "Pill",
+        "purpose": "State and flag pills, sentence case, in Geist."
+      },
+      "data-input": {
+        "displayName": "Data input",
+        "purpose": "Values inside number fields, right-aligned."
+      },
+      "data-log": {
+        "displayName": "Data log",
+        "purpose": "Run log, group summaries, units, table figures."
+      }
+    },
+    "shadows": [
+      {
+        "name": "focus-ring-field",
+        "value": "0 0 0 1px #8ab4f8",
+        "purpose": "Focus indicator on a focused input field only; not elevation. Panels have no shadows."
+      }
+    ],
+    "motion": [
+      {
+        "name": "control-transition",
+        "value": "150ms ease-out",
+        "purpose": "Background, colour and border changes on chips, fields and buttons."
+      },
+      {
+        "name": "chevron-turn",
+        "value": "160ms ease-out",
+        "purpose": "Disclosure chevron rotation."
+      },
+      {
+        "name": "progress-grow",
+        "value": "width 160ms linear",
+        "purpose": "Status-bar progress line while running."
+      },
+      {
+        "name": "progress-fade",
+        "value": "opacity 400ms ease-out 200ms",
+        "purpose": "Progress line fades out after a run."
+      },
+      {
+        "name": "stress-replay",
+        "value": "min(2400ms, 700ms + 4ms per month), linear",
+        "purpose": "Month-by-month reveal of the stress path; skipped under reduced motion."
+      },
+      {
+        "name": "stale-dash",
+        "value": "stroke-dasharray 5 4; outline 1px dashed state-stale",
+        "purpose": "Stale results: dashed series line and amber outline."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone",
+        "value": "max-width: 640px"
+      },
+      {
+        "name": "desk",
+        "value": "min-width: 1040px"
+      },
+      {
+        "name": "wide-stack",
+        "value": "min-width: 1320px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Calculate (primary button)",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one primary action; lives at the right of the status bar.",
+      "html": "<button class=\"ds-run\">Calculate</button>",
+      "css": ":host{--g0:#0f1113;--g1:#16191c;--g2:#1d2125;--g3:#262b31;--seam:#2a2f35;--edge:#626b75;--fg:#e3e6e9;--fg-2:#a1aab3;--fg-3:#828c96;--acc:#8ab4f8;--acc-ink:#0f1113;--acc-bg:#1b2737;--ok:#7fd49b;--warn:#e8b86a;--err:#f28b82;--font:'Geist',ui-sans-serif,system-ui,sans-serif;--mono:'Geist Mono',ui-monospace,'SF Mono',Menlo,monospace;} .ds-run{font:600 14.5px var(--font);color:var(--acc-ink);background:var(--acc);border:0;border-radius:7px;padding:10px 20px;min-width:9.5rem;cursor:pointer;transition:filter 150ms ease-out}.ds-run:hover{filter:brightness(1.08)}.ds-run:focus-visible{outline:2px solid var(--acc);outline-offset:2px}.ds-run:disabled{cursor:progress;filter:saturate(0.6)}"
+    },
+    {
+      "name": "Secondary button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outlined button for Open, Save this plan, Add.",
+      "html": "<button class=\"ds-btn\">Save this plan</button>",
+      "css": ":host{--g0:#0f1113;--g1:#16191c;--g2:#1d2125;--g3:#262b31;--seam:#2a2f35;--edge:#626b75;--fg:#e3e6e9;--fg-2:#a1aab3;--fg-3:#828c96;--acc:#8ab4f8;--acc-ink:#0f1113;--acc-bg:#1b2737;--ok:#7fd49b;--warn:#e8b86a;--err:#f28b82;--font:'Geist',ui-sans-serif,system-ui,sans-serif;--mono:'Geist Mono',ui-monospace,'SF Mono',Menlo,monospace;} .ds-btn{font:500 13.5px var(--font);color:var(--fg);background:transparent;border:1px solid var(--edge);border-radius:6px;padding:6px 12px;cursor:pointer;transition:background-color 150ms ease-out,border-color 150ms ease-out}.ds-btn:hover{background:var(--g2);border-color:var(--fg-3)}.ds-btn:focus-visible{outline:2px solid var(--acc);outline-offset:2px}"
+    },
+    {
+      "name": "Chip group",
+      "kind": "chip",
+      "refersTo": "chip-selected",
+      "description": "Segmented radio choices; selected in Signal Blue Wash.",
+      "html": "<div class=\"ds-seg\"><label><input type=\"radio\" name=\"ds-l\"><span>Frugal</span></label><label><input type=\"radio\" name=\"ds-l\" checked><span>Moderate</span></label><label><input type=\"radio\" name=\"ds-l\"><span>Comfortable</span></label></div>",
+      "css": ":host{--g0:#0f1113;--g1:#16191c;--g2:#1d2125;--g3:#262b31;--seam:#2a2f35;--edge:#626b75;--fg:#e3e6e9;--fg-2:#a1aab3;--fg-3:#828c96;--acc:#8ab4f8;--acc-ink:#0f1113;--acc-bg:#1b2737;--ok:#7fd49b;--warn:#e8b86a;--err:#f28b82;--font:'Geist',ui-sans-serif,system-ui,sans-serif;--mono:'Geist Mono',ui-monospace,'SF Mono',Menlo,monospace;} .ds-seg{display:inline-flex;flex-wrap:wrap;gap:6px;font-family:var(--font)}.ds-seg label{position:relative}.ds-seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}.ds-seg span{display:inline-block;padding:5px 11px;border:1px solid var(--edge);border-radius:6px;font-size:13px;color:var(--fg-2);transition:background-color 150ms ease-out,color 150ms ease-out,border-color 150ms ease-out}.ds-seg span:hover{color:var(--fg)}.ds-seg input:checked+span{background:var(--acc-bg);border-color:var(--acc);color:var(--acc)}.ds-seg input:focus-visible+span{outline:2px solid var(--acc);outline-offset:2px}"
+    },
+    {
+      "name": "Mode switch",
+      "kind": "nav",
+      "refersTo": "mode-switch-selected",
+      "description": "Joined Minimal/Complete switch in the top bar; neutral selection.",
+      "html": "<div class=\"ds-joined\"><label><input type=\"radio\" name=\"ds-m\" checked><span>Minimal</span></label><label><input type=\"radio\" name=\"ds-m\"><span>Complete</span></label></div>",
+      "css": ":host{--g0:#0f1113;--g1:#16191c;--g2:#1d2125;--g3:#262b31;--seam:#2a2f35;--edge:#626b75;--fg:#e3e6e9;--fg-2:#a1aab3;--fg-3:#828c96;--acc:#8ab4f8;--acc-ink:#0f1113;--acc-bg:#1b2737;--ok:#7fd49b;--warn:#e8b86a;--err:#f28b82;--font:'Geist',ui-sans-serif,system-ui,sans-serif;--mono:'Geist Mono',ui-monospace,'SF Mono',Menlo,monospace;} .ds-joined{display:inline-flex;border:1px solid var(--edge);border-radius:7px;overflow:hidden;font-family:var(--font)}.ds-joined label{position:relative}.ds-joined input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}.ds-joined span{display:inline-block;padding:6px 14px;font-size:13px;color:var(--fg-2)}.ds-joined label+label span{border-left:1px solid var(--edge)}.ds-joined span:hover{color:var(--fg)}.ds-joined input:checked+span{background:var(--g3);color:var(--fg)}.ds-joined input:focus-visible+span{outline:2px solid var(--acc);outline-offset:-3px}"
+    },
+    {
+      "name": "Number field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Inset mono field with unit; blue focus ring; red when invalid.",
+      "html": "<label class=\"ds-field\"><input type=\"text\" inputmode=\"decimal\" value=\"1,410\"><span>€</span></label>",
+      "css": ":host{--g0:#0f1113;--g1:#16191c;--g2:#1d2125;--g3:#262b31;--seam:#2a2f35;--edge:#626b75;--fg:#e3e6e9;--fg-2:#a1aab3;--fg-3:#828c96;--acc:#8ab4f8;--acc-ink:#0f1113;--acc-bg:#1b2737;--ok:#7fd49b;--warn:#e8b86a;--err:#f28b82;--font:'Geist',ui-sans-serif,system-ui,sans-serif;--mono:'Geist Mono',ui-monospace,'SF Mono',Menlo,monospace;} .ds-field{display:flex;align-items:center;gap:6px;height:34px;padding:0 9px;width:10rem;background:var(--g0);border:1px solid var(--edge);border-radius:6px;transition:border-color 150ms ease-out}.ds-field:hover{border-color:var(--fg-3)}.ds-field:focus-within{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}.ds-field input{flex:1;min-width:0;border:0;background:transparent;outline:none;color:var(--fg);font:500 14px var(--mono);text-align:right;font-variant-numeric:tabular-nums}.ds-field span{color:var(--fg-3);font:400 12px var(--mono)}"
+    },
+    {
+      "name": "Method figure panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Graphite panel with a title, a flag pill and a large mono figure.",
+      "html": "<section class=\"ds-panel\"><h3>Monte Carlo</h3><p class=\"ds-dt\">Capital you need <span class=\"ds-pill\">plan with this</span></p><p class=\"ds-fig\">€860,000</p><p class=\"ds-s\">Runs out in 4.9% of futures.</p></section>",
+      "css": ":host{--g0:#0f1113;--g1:#16191c;--g2:#1d2125;--g3:#262b31;--seam:#2a2f35;--edge:#626b75;--fg:#e3e6e9;--fg-2:#a1aab3;--fg-3:#828c96;--acc:#8ab4f8;--acc-ink:#0f1113;--acc-bg:#1b2737;--ok:#7fd49b;--warn:#e8b86a;--err:#f28b82;--font:'Geist',ui-sans-serif,system-ui,sans-serif;--mono:'Geist Mono',ui-monospace,'SF Mono',Menlo,monospace;} .ds-panel{background:var(--g1);border:1px solid var(--seam);padding:16px;color:var(--fg);font-family:var(--font)}.ds-panel h3{margin:0;font:500 14px/1.3 var(--font)}.ds-dt{margin:12px 0 0;color:var(--fg-2);font-size:12.5px;display:flex;gap:8px;align-items:center}.ds-pill{font:500 11.5px/1.55 var(--font);padding:0 7px;border-radius:999px;border:1px solid currentColor;color:var(--fg)}.ds-fig{margin:1px 0 0;font:500 30px/1.1 var(--mono);letter-spacing:-0.03em;font-variant-numeric:tabular-nums}.ds-s{margin:2px 0 0;color:var(--fg-3);font-size:12px}"
+    },
+    {
+      "name": "State pills",
+      "kind": "chip",
+      "refersTo": "pill",
+      "description": "Fresh, stale, error and neutral result-state pills.",
+      "html": "<div class=\"ds-pills\"><span class=\"ds-p ok\">example plan</span><span class=\"ds-p warn\">out of date</span><span class=\"ds-p err\">check inputs</span><span class=\"ds-p mute\">calculating</span></div>",
+      "css": ":host{--g0:#0f1113;--g1:#16191c;--g2:#1d2125;--g3:#262b31;--seam:#2a2f35;--edge:#626b75;--fg:#e3e6e9;--fg-2:#a1aab3;--fg-3:#828c96;--acc:#8ab4f8;--acc-ink:#0f1113;--acc-bg:#1b2737;--ok:#7fd49b;--warn:#e8b86a;--err:#f28b82;--font:'Geist',ui-sans-serif,system-ui,sans-serif;--mono:'Geist Mono',ui-monospace,'SF Mono',Menlo,monospace;} .ds-pills{display:flex;gap:8px;background:var(--g1);padding:12px}.ds-p{font:500 11.5px/1.55 var(--font);padding:0 7px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}.ds-p.ok{color:var(--ok)}.ds-p.warn{color:var(--warn)}.ds-p.err{color:var(--err)}.ds-p.mute{color:var(--fg-3)}"
+    },
+    {
+      "name": "Status bar",
+      "kind": "custom",
+      "refersTo": "status-bar",
+      "description": "Fixed bottom bar: mono run log with a state dot, Calculate at the right.",
+      "html": "<div class=\"ds-sb\"><p class=\"ds-log\" data-state=\"stale\"><span class=\"ds-dot\"></span>Inputs changed. Calculate to update.</p><button class=\"ds-run\">Calculate</button></div>",
+      "css": ":host{--g0:#0f1113;--g1:#16191c;--g2:#1d2125;--g3:#262b31;--seam:#2a2f35;--edge:#626b75;--fg:#e3e6e9;--fg-2:#a1aab3;--fg-3:#828c96;--acc:#8ab4f8;--acc-ink:#0f1113;--acc-bg:#1b2737;--ok:#7fd49b;--warn:#e8b86a;--err:#f28b82;--font:'Geist',ui-sans-serif,system-ui,sans-serif;--mono:'Geist Mono',ui-monospace,'SF Mono',Menlo,monospace;} .ds-sb{display:flex;align-items:center;gap:14px;min-height:42px;padding:10px 16px;background:var(--g1);border-top:1px solid var(--seam)}.ds-log{flex:1;margin:0;font:400 12.5px/1.45 var(--mono);color:var(--fg-2)}.ds-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:8px;background:var(--fg-3)}.ds-log[data-state=stale]{color:var(--warn)}.ds-log[data-state=stale] .ds-dot{background:var(--warn)}.ds-run{font:600 14.5px var(--font);color:var(--acc-ink);background:var(--acc);border:0;border-radius:7px;padding:10px 20px;min-width:9.5rem;cursor:pointer}.ds-run:hover{filter:brightness(1.08)}.ds-run:focus-visible{outline:2px solid var(--acc);outline-offset:2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Night Console",
+    "overview": "The planner is a working console, not a landing page. Inputs and both methods' answers stay on screen together as tiled graphite panels, so the experience is: change a number, run it again, read the result. Panels sit on a slightly darker ground and are separated by 1px seams, never by shadows. Words are set in Geist and every figure in Geist Mono, so numbers line up and read like instrument output. One soft blue marks the primary action and the current selection. Green, amber and red appear only to show state.\n\nDensity is deliberate. Panels pack edge to edge in a grid, padding is tight (16px, or 12px on phones), and labels are small and quiet so the large mono figures carry the screen. A status bar fixed to the bottom of the viewport holds the run log and Calculate, like the status line of a terminal. Motion serves the data. The signature moment is the stress test, which replays real market history month by month as a path drawn across the chart. When an input changes, every result it affects turns dashed and gets an amber outline until the plan is run again.\n\nThe system is dark only, by owner decision (2026-10-12). Both theme blocks carry the dark scheme so the host's light/dark contract is met without a light variant. It deliberately rejects the category default: a marketing hero with one friendly big number and a call to action.",
+    "keyCharacteristics": [
+      "Dark graphite ground with panels one step lighter, tiled on 1px seams.",
+      "Geist for words, Geist Mono with tabular figures for every number, input and log line.",
+      "One blue accent for action and selection. State colours are used for state only.",
+      "Charts are neutral graphite steps with a single accent line.",
+      "A fixed bottom status bar carries the run log and the primary action.",
+      "Stale results are dashed and outlined in amber, never hidden."
+    ],
+    "rules": [
+      {
+        "name": "The One Signal Rule",
+        "body": "Blue means \"act here\" or \"this is selected\". It never fills a band, shades a region or decorates a heading.",
+        "section": "colors"
+      },
+      {
+        "name": "The State-Only Rule",
+        "body": "Green, amber and red describe state (fresh, stale, error) and nothing else. Amber in particular means stale only. That is why dip shading is a graphite step and not a warning colour.",
+        "section": "colors"
+      },
+      {
+        "name": "The Graphite Data Rule",
+        "body": "Chart areas, bands and stacked bars use neutral graphite and grey steps. The only coloured mark in a chart is the selected series line.",
+        "section": "colors"
+      },
+      {
+        "name": "The Figures-in-Mono Rule",
+        "body": "Every number is set in Geist Mono with tabular figures: inputs, readouts, table cells, axis ticks, the run log, and bold figures inside sentences. Words are in Geist, including pills, buttons and chart annotations (\"Capital you need\", \"Target retirement\").",
+        "section": "typography"
+      },
+      {
+        "name": "The Sentence-Case Rule",
+        "body": "Labels, pills and buttons are in plain sentence case. Nothing uses all caps or wide tracking. The UI is in English, with the currency as an input.",
+        "section": "typography"
+      },
+      {
+        "name": "The Compact-Readout Rule",
+        "body": "Figures in readouts are rounded to a compact form (for example €1.35M or €893K). Inputs show full values in the page's own format.",
+        "section": "typography"
+      },
+      {
+        "name": "The Seams-Not-Shadows Rule",
+        "body": "Panels are divided by 1px seams and tonal steps, never by drop shadows. A surface that needs to stand out gets a lighter graphite step or an edge border.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** separate panels with 1px Seam lines through a grid gap, and step tone (ground, panel, hover, raised) for depth.",
+      "**Do** set every figure in Geist Mono with tabular numbers, and every word in Geist.",
+      "**Do** keep Signal Blue to Calculate, progress, focus, selected chips and months, and the selected series line.",
+      "**Do** use graphite bands and the grey ramp for chart areas and stacked bars.",
+      "**Do** mark outdated results with a dashed amber outline and dimmed figures, and keep them visible.",
+      "**Do** keep the fixed status bar's height reserved with body padding and `scroll-padding-bottom`, so focus is never hidden.",
+      "**Do** show field errors inline with `aria-invalid` and `aria-describedby`, move focus to the field, and repeat the error in the log.",
+      "**Do** offer a \"Show the numbers\" table under every chart."
+    ],
+    "donts": [
+      "**Don't** use drop shadows to lift panels or cards.",
+      "**Don't** use amber for anything but stale, green for anything but the fresh pill and log dot, or red for anything but errors and the armed Delete.",
+      "**Don't** fill chart bands, dips or headings with Signal Blue.",
+      "**Don't** set words, pills or chart annotations in mono, or numbers in the sans.",
+      "**Don't** add a light theme. The system is dark only by owner decision.",
+      "**Don't** add all-caps labels or a marketing hero with one big number and a call to action."
+    ]
+  }
+}

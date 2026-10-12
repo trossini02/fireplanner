@@ -1,0 +1,2121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PAC FIRE Planner</title>
+<meta name="description" content="How much you need to retire early, and how much to invest every month to get there. Each answer is tested on 2,000 futures, twice: random markets and real market history. Runs in your browser.">
+<meta name="theme-color" content="#0f1113">
+<meta property="og:type" content="website">
+<meta property="og:title" content="PAC FIRE Planner">
+<meta property="og:description" content="How much you need to retire early, and how much to invest every month to get there, tested on random markets and real market history.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2316191c'/%3E%3Cpath d='M7 23l6-6 4 3 8-9' fill='none' stroke='%238ab4f8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* A dark console: graphite panels tiled on 1px seams, figures in Geist Mono, one blue accent
+   for the primary action and the current selection, green/amber/red only for state.
+   Dark only (owner decision 2026-10-12), so both theme blocks carry the same tokens. */
+:root {
+  --g0: #0f1113;
+  --g1: #16191c;
+  --g2: #1d2125;
+  --g3: #262b31;
+  --seam: #2a2f35;
+  --edge: #626b75;
+  --fg: #e3e6e9;
+  --fg-2: #a1aab3;
+  --fg-3: #828c96;
+  --acc: #8ab4f8;
+  --acc-ink: #0f1113;
+  --acc-bg: #1b2737;
+  --ok: #7fd49b;
+  --warn: #e8b86a;
+  --err: #f28b82;
+  --band-1: #242a31;
+  --band-2: #3a424c;
+  --r1: #d5dade;
+  --r2: #9aa2ab;
+  --r3: #68717b;
+  --r4: #434a52;
+  --dip: #23282e;
+  --font: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --sb: 64px;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme: dark; } }
+:root[data-theme="dark"] { color-scheme: dark; }
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-bottom: calc(var(--sb) + 24px); scrollbar-color: var(--edge) var(--g0); }
+body {
+  margin: 0;
+  background: var(--g0);
+  color: var(--fg);
+  font: 400 14.5px/1.5 var(--font);
+  caret-color: var(--acc);
+  padding-bottom: var(--sb);
+}
+::selection { background: var(--acc-bg); color: var(--fg); }
+a { color: var(--fg); text-decoration-color: var(--fg-3); text-underline-offset: 3px; }
+a:hover { text-decoration-color: var(--fg); }
+summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 9px; color: var(--fg-2); font-size: 13.5px; }
+summary:hover { color: var(--fg); }
+summary::-webkit-details-marker { display: none; }
+summary::before {
+  content: ""; flex: none; width: 6px; height: 6px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+  transform: translateX(-1px) rotate(-45deg); transition: transform 160ms ease-out;
+}
+details[open] > summary::before { transform: translateY(-2px) rotate(45deg); }
+:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+button, input, select { font: inherit; color: inherit; }
+h1, h2, h3 { text-wrap: balance; }
+.num, .fig, td, .mono { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--mono); }
+
+.page { max-width: 1480px; margin: 0 auto; padding: 16px; }
+
+/* ---------- top bar ---------- */
+.top {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px;
+  background: var(--g1); border: 1px solid var(--seam); border-radius: 8px 8px 0 0; padding: 14px 16px;
+}
+.top h1 { margin: 0; font: 600 19px/1.2 var(--font); letter-spacing: -0.01em; }
+.top p { margin: 3px 0 0; color: var(--fg-2); font-size: 13.5px; max-width: 46rem; }
+
+/* segmented controls: real radios, styled */
+.seg { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.seg label { position: relative; }
+.seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.seg input + span {
+  display: inline-block; padding: 5px 11px; border: 1px solid var(--edge); border-radius: 6px;
+  font-size: 13px; color: var(--fg-2); background: transparent; cursor: pointer; user-select: none; white-space: nowrap;
+  transition: background-color 150ms ease-out, color 150ms ease-out, border-color 150ms ease-out;
+}
+.seg input + span:hover { color: var(--fg); }
+.seg input:checked + span { background: var(--acc-bg); border-color: var(--acc); color: var(--acc); }
+.seg input:focus-visible + span { outline: 2px solid var(--acc); outline-offset: 2px; }
+.seg input:disabled + span { opacity: 0.45; cursor: not-allowed; }
+.seg.joined { gap: 0; border: 1px solid var(--edge); border-radius: 7px; overflow: hidden; }
+.seg.joined input + span { border: 0; border-radius: 0; padding: 6px 14px; }
+.seg.joined label + label input + span { border-left: 1px solid var(--edge); }
+.seg.joined input:checked + span { background: var(--g3); color: var(--fg); }
+.seg.joined input:focus-visible + span { outline-offset: -3px; }
+
+/* ---------- desk: plan panel + panel stack ---------- */
+.desk {
+  display: grid; gap: 1px; background: var(--seam);
+  border: 1px solid var(--seam); border-top: 0; border-radius: 0 0 8px 8px; overflow: hidden;
+}
+.desk > * { min-width: 0; }
+.stack { display: grid; gap: 1px; background: var(--seam); min-width: 0; }
+.stack > * { min-width: 0; }
+@media (min-width: 1040px) {
+  .desk { grid-template-columns: 25rem minmax(0, 1fr); }
+  .plan[data-mode="min"] .plan-in { position: sticky; top: 0; }
+}
+/* Full-width plan (tablets): keep each label near its field. */
+@media (max-width: 1039px) { .plan-in { max-width: 40rem; } }
+@media (min-width: 1320px) {
+  .stack { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .stack > .wide { grid-column: 1 / -1; }
+}
+.panel { background: var(--g1); padding: 16px; }
+.ph { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 12px; margin-bottom: 12px; }
+.ph h2 { margin: 0; font: 600 15px/1.3 var(--font); color: var(--fg); letter-spacing: -0.005em; }
+.note { margin: 0; color: var(--fg-2); font-size: 13px; line-height: 1.5; max-width: 62ch; }
+.pill { font: 500 11.5px/1.55 var(--font); padding: 0 7px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.pill.flag { color: var(--fg); }
+.pill[data-off] { visibility: hidden; }
+.pill.ok { color: var(--ok); }
+.pill.warn { color: var(--warn); }
+.pill.err { color: var(--err); }
+.pill.mute { color: var(--fg-3); }
+
+/* ---------- plan panel ---------- */
+.plan { background: var(--g1); }
+.plan-in { padding: 4px 0 8px; }
+.grp { border-top: 1px solid var(--seam); }
+.grp:first-child { border-top: 0; }
+.grp-h {
+  display: flex; width: 100%; align-items: baseline; justify-content: space-between; gap: 10px;
+  background: transparent; border: 0; padding: 12px 16px; cursor: pointer; text-align: left;
+}
+.grp-h:hover { background: var(--g2); }
+.grp-h:focus-visible { outline-offset: -2px; }
+.grp-h b { font: 500 14px var(--font); color: var(--fg); }
+.grp-h .sum { margin-left: auto; color: var(--fg-3); font: 400 12.5px var(--mono); text-align: right; }
+.grp-h .sum.bad { color: var(--err); }
+.grp-h::after {
+  content: ""; flex: none; width: 6px; height: 6px; align-self: center;
+  border-right: 1.5px solid var(--fg-3); border-bottom: 1.5px solid var(--fg-3);
+  transform: translateY(-2px) rotate(45deg); transition: transform 160ms ease-out;
+}
+.grp[data-collapsed] .grp-h::after { transform: rotate(-45deg); }
+.grp-b { padding: 2px 16px 14px; display: grid; gap: 10px; }
+.plan[data-mode="full"] .grp[data-collapsed] .grp-b { display: none; }
+.plan[data-mode="min"] .grp-h,
+.plan[data-mode="min"] [data-full],
+.plan[data-mode="full"] [data-min] { display: none !important; }
+.plan[data-mode="min"] .grp { border-top: 0; }
+.plan[data-mode="min"] .grp-b { padding-block: 6px; }
+.plan[data-mode="min"] .plan-in { padding-top: 10px; }
+.plan[data-mode="min"][data-xx] .xx-row { display: grid !important; }
+
+.row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(7.5rem, 10.5rem); align-items: center; gap: 4px 12px; }
+.row > label, .row > .lbl { font-size: 14px; }
+.hint { display: block; color: var(--fg-3); font-size: 12.5px; line-height: 1.4; margin-top: 1px; }
+.field {
+  display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 9px;
+  background: var(--g0); border: 1px solid var(--edge); border-radius: 6px;
+  transition: border-color 150ms ease-out;
+}
+.field:hover { border-color: var(--fg-3); }
+.field:focus-within { border-color: var(--acc); box-shadow: 0 0 0 1px var(--acc); }
+.field input, .field select {
+  flex: 1; min-width: 0; width: 100%; border: 0; background: transparent; outline: none;
+  font: 500 14px var(--mono); text-align: right; -moz-appearance: textfield;
+}
+.field select { font-family: var(--font); text-align: left; cursor: pointer; }
+.field select option { background: var(--g1); color: var(--fg); }
+.field input::-webkit-outer-spin-button, .field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.field .u { color: var(--fg-3); font: 400 12px var(--mono); white-space: nowrap; }
+.field[data-bad] { border-color: var(--err); }
+.ferr { grid-column: 1 / -1; margin: 0; color: var(--err); font-size: 13px; }
+.chips { display: grid; gap: 6px; }
+.chips > .lbl { font-size: 14px; }
+.subnote { margin: 0; color: var(--fg-3); font-size: 12.5px; }
+
+.ledger { width: 100%; border-collapse: collapse; }
+.ledger td { padding: 4px 0; border-top: 1px solid var(--seam); vertical-align: middle; font-size: 13.5px; }
+.ledger td.amt { width: 7.6rem; padding-left: 8px; }
+.ledger td.amt .field { height: 30px; }
+.ledger .tagcell { width: 5.2rem; text-align: right; padding-left: 6px; }
+.tag {
+  font: 500 11.5px var(--font); padding: 2px 8px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--edge); background: transparent; color: var(--fg-2);
+}
+.tag[data-kind="essential"] { background: var(--g3); border-color: var(--g3); color: var(--fg); }
+.ledger tfoot td { border-top: 1px solid var(--edge); padding-top: 7px; font-weight: 500; }
+.ledger tfoot .t { text-align: right; font-family: var(--mono); }
+
+.tw { overflow-x: auto; }
+.assets { width: 100%; border-collapse: collapse; min-width: 21rem; }
+.assets th { font: 400 12px var(--font); color: var(--fg-3); text-align: right; padding: 0 0 6px 6px; vertical-align: bottom; }
+.assets th:first-child { text-align: left; padding-left: 0; }
+.assets td { border-top: 1px solid var(--seam); padding: 5px 0 5px 6px; }
+.assets td:first-child { padding-left: 0; font-size: 13px; }
+.assets .field { height: 30px; padding: 0 6px; }
+.assets .field input { font-size: 13px; }
+.assets .hist { color: var(--fg-3); font: 400 12px var(--mono); text-align: right; white-space: nowrap; }
+.assets tfoot td { font-weight: 500; }
+.bad { color: var(--err); }
+.corr { border-collapse: collapse; }
+.corr th { font: 400 12px var(--font); color: var(--fg-3); padding: 4px 5px; text-align: center; }
+.corr td { padding: 2px; }
+.corr .field { height: 28px; width: 4rem; padding: 0 6px; }
+.corr .field input { font-size: 12.5px; }
+.corr .fixed { color: var(--fg-3); text-align: center; font: 400 12.5px var(--mono); }
+.sub[open] > summary { margin-bottom: 8px; }
+.kids { display: grid; gap: 8px; }
+.kid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: end; }
+.kid .lbl { font-size: 12px; color: var(--fg-3); display: block; margin-bottom: 3px; }
+.btn {
+  font: 500 13.5px var(--font); color: var(--fg); background: transparent;
+  border: 1px solid var(--edge); border-radius: 6px; padding: 6px 12px; cursor: pointer; justify-self: start;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out;
+}
+.btn:hover { background: var(--g2); border-color: var(--fg-3); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn.x { height: 34px; color: var(--fg-2); }
+.months { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; }
+.months label { position: relative; }
+.months input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.months span {
+  display: block; text-align: center; padding: 5px 0; border-radius: 6px; border: 1px solid var(--edge);
+  font-size: 13px; color: var(--fg-2); cursor: pointer; user-select: none;
+}
+.months input:checked + span { background: var(--acc-bg); border-color: var(--acc); color: var(--acc); }
+.months input:focus-visible + span { outline: 2px solid var(--acc); outline-offset: 2px; }
+.fixedlist { margin: 0; padding: 0; list-style: none; display: grid; gap: 0; font-size: 13px; }
+.fixedlist li { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-top: 1px solid var(--seam); color: var(--fg-2); }
+.fixedlist li b { font: 400 12.5px var(--mono); color: var(--fg); text-align: right; }
+
+/* ---------- results ---------- */
+.verdict { margin: 0 0 14px; font-size: 15px; line-height: 1.5; max-width: 62ch; }
+.verdict b { font-family: var(--mono); font-weight: 500; }
+.methods { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--seam); border-block: 1px solid var(--seam); margin: 0 -16px; }
+.meth { background: var(--g1); padding: 14px 16px; min-width: 0; }
+.meth h3 { margin: 0; font: 500 14px/1.3 var(--font); display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+.meth .mdesc { margin: 2px 0 6px; color: var(--fg-3); font-size: 12.5px; }
+.meth dl { margin: 0; }
+.meth dt { color: var(--fg-2); font-size: 12.5px; margin-top: 12px; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+.meth dd { margin: 1px 0 0; }
+.fig { font: 500 clamp(21px, 5.6vw, 30px)/1.1 var(--mono); letter-spacing: -0.03em; overflow-wrap: anywhere; }
+.fig.sm { font-size: clamp(17px, 4.4vw, 20px); letter-spacing: -0.02em; }
+.meth .s { display: block; color: var(--fg-3); font-size: 12px; line-height: 1.4; margin-top: 2px; }
+.dipline { margin: 12px 0 0; color: var(--fg-2); font-size: 13.5px; max-width: 62ch; }
+
+[data-stale] .stale-able { outline: 1px dashed var(--warn); outline-offset: -1px; }
+[data-stale] .stale-able .fig,
+[data-stale] .stale-able .verdict b { color: var(--fg-2); }
+[data-stale] #fan .median, [data-stale] #stressChart .wline { stroke-dasharray: 5 4; }
+
+/* charts */
+.readout { margin: 0 0 6px; min-height: 2.9em; color: var(--fg-2); font-size: 13px; }
+.readout b { color: var(--fg); font: 500 13px var(--mono); }
+.chart { width: 100%; touch-action: pan-y; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { font-family: var(--mono); font-variant-numeric: tabular-nums; paint-order: stroke; stroke: var(--g1); stroke-width: 3px; stroke-linejoin: round; }
+.chart text.ann { font-family: var(--font); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 8px 0 0; padding: 0; list-style: none; font-size: 12.5px; color: var(--fg-2); }
+.legend li { display: flex; align-items: center; gap: 6px; }
+.sw { display: inline-block; width: 16px; height: 9px; border-radius: 2px; }
+.sw.o { background: var(--band-1); }
+.sw.i { background: var(--band-2); }
+.sw.l { height: 0; border-top: 2px solid var(--acc); border-radius: 0; }
+.sw.c { height: 0; border-top: 1.5px dashed var(--fg-2); border-radius: 0; }
+.sw.d { background: var(--dip); outline: 1px solid var(--edge); }
+.capnote { font-size: 12.5px; color: var(--fg-3); margin: 6px 0 0; }
+.numbers { margin-top: 10px; }
+.numbers[open] > summary { margin-bottom: 6px; }
+.tbl { width: 100%; border-collapse: collapse; min-width: 18rem; font-size: 13px; }
+.tbl th, .tbl td { padding: 6px 0 6px 10px; text-align: right; border-top: 1px solid var(--seam); }
+.tbl td { font-family: var(--mono); }
+.tbl th:first-child, .tbl td:first-child { text-align: left; padding-left: 0; }
+.tbl thead th { border-top: 0; font-weight: 400; color: var(--fg-3); vertical-align: bottom; }
+.tbl tbody th { font-weight: 400; color: var(--fg-2); }
+
+.stackbar { display: flex; gap: 2px; height: 10px; border-radius: 3px; overflow: hidden; margin: 4px 0 10px; }
+.stackbar span { display: block; height: 100%; min-width: 2px; }
+.stackrow .lbl { font-size: 12.5px; color: var(--fg-2); }
+.key { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; vertical-align: baseline; }
+
+.spend { display: grid; font-size: 13.5px; }
+.spend div { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid var(--seam); }
+.spend div span:last-child { font-family: var(--mono); }
+.spend div.tot { font-weight: 500; border-top: 1px solid var(--edge); }
+.spend div.later { color: var(--fg-2); }
+
+/* stress test */
+.sctl { display: grid; gap: 10px; margin: 12px 0 14px; }
+.sctl .line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.sctl .line > .lbl { font-size: 13px; color: var(--fg-2); min-width: 4.5rem; }
+.sctl .field { width: auto; }
+.sctl .field select { min-width: 4.5rem; }
+.sout { margin: 0 0 6px; font-size: 15px; max-width: 62ch; }
+.sout b { font-family: var(--mono); font-weight: 500; }
+.smeta { margin: 0 0 10px; color: var(--fg-3); font-size: 12.5px; }
+
+/* saved plans */
+.save { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+.save .field { flex: 1 1 14rem; }
+.save .field input { text-align: left; font-family: var(--font); }
+.plans { list-style: none; margin: 12px 0 0; padding: 0; }
+.plans li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--seam); }
+.plans .pname { font-weight: 500; overflow-wrap: anywhere; }
+.plans .pmeta { display: block; color: var(--fg-3); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.plans .acts { display: flex; gap: 8px; align-items: center; }
+.plans .del { margin-left: 16px; color: var(--fg-2); }
+.plans .del:hover, .plans .del:focus-visible { color: var(--err); border-color: var(--err); }
+.plans .del[data-armed] { color: var(--err); border-color: var(--err); }
+.cmpbox { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--fg-2); cursor: pointer; }
+.cmpbox input { width: 16px; height: 16px; accent-color: var(--acc); margin: 0; }
+.compare { margin-top: 14px; }
+.compare h3 { margin: 0 0 8px; font: 500 14px var(--font); }
+.cbar { display: block; height: 4px; border-radius: 2px; background: var(--fg-3); margin: 4px 0 0 auto; min-width: 2px; }
+.cmpt { table-layout: fixed; }
+.cmpt th:first-child { width: 40%; }
+.diff th { color: var(--fg-2); }
+.diff td.same { color: var(--fg-3); }
+
+.how ul { margin: 0; padding-left: 1.1em; display: grid; gap: 8px; color: var(--fg-2); font-size: 13.5px; max-width: 75ch; }
+.how b { color: var(--fg); font-weight: 500; }
+
+/* ---------- status bar ---------- */
+.statusbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+  background: var(--g1); border-top: 1px solid var(--seam);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+}
+.sb-in { max-width: 1448px; margin: 0 auto; display: flex; align-items: center; gap: 14px; min-height: 42px; }
+.log { flex: 1; margin: 0; font: 400 12.5px/1.45 var(--mono); color: var(--fg-2); min-width: 0; }
+.log .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 8px; vertical-align: 1px; background: var(--fg-3); }
+.log[data-state="ok"] .dot { background: var(--ok); }
+.log[data-state="run"] .dot { background: var(--acc); }
+.log[data-state="stale"] { color: var(--warn); }
+.log[data-state="stale"] .dot { background: var(--warn); }
+.log[data-state="err"] { color: var(--err); }
+.log[data-state="err"] .dot { background: var(--err); }
+.log b { color: var(--fg); font-weight: 500; }
+.log .lg-b::before { content: " "; }
+.run {
+  flex: none; font: 600 14.5px var(--font); color: var(--acc-ink); background: var(--acc);
+  border: 0; border-radius: 7px; padding: 10px 20px; min-width: 9.5rem; cursor: pointer;
+  transition: filter 150ms ease-out;
+}
+.run:hover { filter: brightness(1.08); }
+.run:disabled { cursor: progress; filter: saturate(0.6); }
+.progress { position: absolute; left: 0; top: -1px; height: 2px; width: 0; background: var(--acc); transition: width 160ms linear; }
+.progress[data-done] { opacity: 0; transition: opacity 400ms ease-out 200ms; }
+
+@media (max-width: 640px) {
+  .page { padding: 12px 12px 16px; }
+  .field input, .field select, .save .field input { font-size: 16px; }
+  .assets .field input, .corr .field input { font-size: 16px; }
+  .panel { padding: 14px 12px; }
+  .grp-h { padding-inline: 12px; }
+  .grp-b { padding-inline: 12px; }
+  .row { grid-template-columns: minmax(0, 1fr) minmax(7rem, 9.5rem); }
+  .methods { margin: 0 -12px; }
+  .meth { padding: 12px; }
+  .statusbar { padding-inline: 12px; }
+  .sb-in { gap: 12px; }
+  .run { min-width: 7.5rem; padding-inline: 16px; }
+  .log .lg-b { display: block; }
+  .log .lg-b::before { content: none; }
+  .plans li { grid-template-columns: auto minmax(0, 1fr); }
+  .plans .acts { grid-column: 2; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <div>
+      <h1>PAC FIRE Planner</h1>
+      <p>How much you need to retire early, and how much to invest every month to get there. Each answer is tested on 2,000 futures, twice: random markets and real market history.</p>
+    </div>
+    <div class="seg joined" role="radiogroup" aria-label="How many inputs">
+      <label><input type="radio" name="mode" value="min" checked><span>Minimal</span></label>
+      <label><input type="radio" name="mode" value="full"><span>Complete</span></label>
+    </div>
+  </header>
+
+  <main class="desk" id="desk">
+    <form class="plan" id="plan" data-mode="min" novalidate aria-label="Your plan">
+      <div class="plan-in">
+        <section class="grp" data-grp="you">
+          <button type="button" class="grp-h" aria-expanded="true"><b>You</b></button>
+          <div class="grp-b">
+            <div class="row"><label for="country">Country you'll live in</label>
+              <div class="field"><select id="country"></select></div></div>
+            <div class="row xx-row" data-full><label for="currency">Currency</label>
+              <div class="field"><select id="currency"></select></div></div>
+            <div class="row"><label for="age">Your age today</label>
+              <div class="field"><input id="age" type="text" inputmode="numeric" min="16" max="90" step="1" value="30"><span class="u">yrs</span></div></div>
+            <div class="row"><label for="retireYear">Retire in<span class="hint" id="retireHint"></span></label>
+              <div class="field"><input id="retireYear" type="text" inputmode="numeric" step="1" value="2045"></div></div>
+            <div class="row" data-full><label for="endAge">Plan until age<span class="hint">The money must last until then.</span></label>
+              <div class="field"><input id="endAge" type="text" inputmode="numeric" min="50" max="110" step="1" value="95"><span class="u">yrs</span></div></div>
+            <div class="row" data-full><label for="failPct">Accepted chance of running out</label>
+              <div class="field"><input id="failPct" type="text" inputmode="decimal" min="0.5" max="50" step="any" value="5"><span class="u">%</span></div></div>
+          </div>
+        </section>
+
+        <section class="grp" data-grp="spend">
+          <button type="button" class="grp-h" aria-expanded="true"><b>Spending</b><span class="sum" id="spendSum"></span></button>
+          <div class="grp-b">
+            <div class="chips">
+              <span class="lbl" id="lifestyleLbl">Lifestyle</span>
+              <div class="seg" role="radiogroup" aria-labelledby="lifestyleLbl">
+                <label><input type="radio" name="lifestyle" value="frugal"><span>Frugal</span></label>
+                <label><input type="radio" name="lifestyle" value="moderate" checked><span>Moderate</span></label>
+                <label><input type="radio" name="lifestyle" value="comfortable"><span>Comfortable</span></label>
+                <label><input type="radio" name="lifestyle" value="lavish"><span>Lavish</span></label>
+                <label><input type="radio" name="lifestyle" value="custom"><span>My own</span></label>
+              </div>
+            </div>
+            <div class="row" data-min><label for="mSpend">Monthly spending<span class="hint">Today's money, for the whole household.</span></label>
+              <div class="field"><input id="mSpend" data-fmt="money" type="text" inputmode="decimal" step="any" min="0"><span class="u cur"></span></div></div>
+            <div class="chips" data-full>
+              <span class="lbl" id="adultsLbl">Adults in the household</span>
+              <div class="seg" role="radiogroup" aria-labelledby="adultsLbl">
+                <label><input type="radio" name="adults" value="1" checked><span>1</span></label>
+                <label><input type="radio" name="adults" value="2"><span>2</span></label>
+              </div>
+            </div>
+            <p class="subnote" data-full>Monthly, today's money, adjusted for the country's cost of living. Tap a tag to move a line between essentials and extras.</p>
+            <table class="ledger" id="spendTable" data-full>
+              <tbody></tbody>
+              <tfoot>
+                <tr><td>Essentials</td><td class="t" id="totEss" colspan="2"></td></tr>
+                <tr><td>Extras</td><td class="t" id="totExt" colspan="2"></td></tr>
+              </tfoot>
+            </table>
+            <div class="chips" data-full>
+              <span class="lbl" id="fireLbl">FIRE type</span>
+              <div class="seg" role="radiogroup" aria-labelledby="fireLbl">
+                <label><input type="radio" name="fire" value="lean"><span>Lean</span></label>
+                <label><input type="radio" name="fire" value="regular" checked><span>Regular</span></label>
+                <label><input type="radio" name="fire" value="fat"><span>Fat</span></label>
+                <label><input type="radio" name="fire" value="barista"><span>Barista</span></label>
+              </div>
+              <p class="subnote" id="fireNote"></p>
+            </div>
+            <div id="baristaFields" class="chips" data-full hidden>
+              <div class="row"><label for="baristaIncome">Part-time income, after tax</label>
+                <div class="field"><input id="baristaIncome" data-fmt="money" type="text" inputmode="decimal" step="any" data-money="800" data-scale="cost"><span class="u cur"></span></div></div>
+              <div class="row"><label for="baristaUntil">Work part-time until age</label>
+                <div class="field"><input id="baristaUntil" type="text" inputmode="numeric" step="1" value="60"><span class="u">yrs</span></div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="grp" data-grp="home">
+          <button type="button" class="grp-h" aria-expanded="true"><b>Home and children</b></button>
+          <div class="grp-b">
+            <div class="chips">
+              <span class="lbl" id="homeLbl">Home</span>
+              <div class="seg" role="radiogroup" aria-labelledby="homeLbl">
+                <label><input type="radio" name="home" value="owned" checked><span>Paid off</span></label>
+                <label><input type="radio" name="home" value="mortgage"><span>Mortgage</span></label>
+                <label><input type="radio" name="home" value="rent"><span>Rent</span></label>
+              </div>
+            </div>
+            <div id="homeFields" class="chips" hidden>
+              <div class="row"><label for="homePayment" id="homePaymentLbl">Monthly payment</label>
+                <div class="field"><input id="homePayment" data-fmt="money" type="text" inputmode="decimal" step="any" data-scale="cost"><span class="u cur"></span></div></div>
+              <div class="row" id="paidOffRow"><label for="paidOffYear">Paid off in<span class="hint">The payment stays the same; inflation doesn't raise it.</span></label>
+                <div class="field"><input id="paidOffYear" type="text" inputmode="numeric" step="1" value="2048"></div></div>
+            </div>
+            <div class="chips" data-full>
+              <span class="lbl">Children</span>
+              <p class="subnote">Each child adds a monthly cost (today's money) from their birth year until they are independent. Only the years after you retire need extra capital.</p>
+              <div class="kids" id="kids"></div>
+              <button type="button" class="btn" id="addKid">Add a child</button>
+            </div>
+            <div class="row" data-full><label for="indepAge">Children independent at age</label>
+              <div class="field"><input id="indepAge" type="text" inputmode="numeric" step="1" value="25"><span class="u">yrs</span></div></div>
+          </div>
+        </section>
+
+        <section class="grp" data-grp="inv">
+          <button type="button" class="grp-h" aria-expanded="true"><b>Investments</b><span class="sum" id="allocSumTop"></span></button>
+          <div class="grp-b">
+            <div class="row"><label for="existing">Already invested<span class="hint">Counted from today, at its current value.</span></label>
+              <div class="field"><input id="existing" data-fmt="money" type="text" inputmode="decimal" step="any" data-money="30000" data-scale="fx"><span class="u cur"></span></div></div>
+            <p class="subnote" data-full>Your split, and what you expect each asset to do. Growth is yearly and after inflation. The last column shows what <span class="histspan">history</span> delivered (used by block Monte Carlo).</p>
+            <div class="tw" data-full>
+              <table class="assets" id="assetTable">
+                <thead><tr><th>Asset</th><th>Split</th><th>Growth</th><th>Volatility</th><th class="histspan">History</th></tr></thead>
+                <tbody></tbody>
+                <tfoot><tr><td>Total</td><td id="allocSum" style="text-align:right" class="mono"></td><td colspan="3"></td></tr></tfoot>
+              </table>
+            </div>
+            <p class="subnote" data-full>Precious metals are half gold, half an index of all precious metals (gold, silver and platinum).</p>
+            <details class="sub" data-full>
+              <summary>Correlations between assets (Monte Carlo)</summary>
+              <div class="tw"><table class="corr" id="corrTable"></table></div>
+              <p class="subnote">1 moves together, 0 unrelated, −1 opposite.</p>
+            </details>
+          </div>
+        </section>
+
+        <section class="grp" data-grp="tax" data-full>
+          <button type="button" class="grp-h" aria-expanded="true"><b>Taxes and inflation</b></button>
+          <div class="grp-b">
+            <p class="subnote" id="countryNote"></p>
+            <div class="row"><label for="inflation">Inflation, long-run average</label>
+              <div class="field"><input id="inflation" type="text" inputmode="decimal" step="any"><span class="u">%/yr</span></div></div>
+            <div class="row"><label for="inflSpread">How much it varies<span class="hint">Typical distance from the average, year to year.</span></label>
+              <div class="field"><input id="inflSpread" type="text" inputmode="decimal" step="any" min="0" value="1.5"><span class="u">pts</span></div></div>
+            <div class="row"><label for="inflSpike">A spike of +5 points every<span class="hint">On average. It fades over a few years. 0 means never.</span></label>
+              <div class="field"><input id="inflSpike" type="text" inputmode="numeric" step="any" min="0" value="15"><span class="u">yrs</span></div></div>
+            <p class="subnote">Random inflation applies to Monte Carlo. Block Monte Carlo replays real US inflation, moved to your average.</p>
+            <div class="row"><label for="taxEquity">Tax on stock gains</label>
+              <div class="field"><input id="taxEquity" type="text" inputmode="decimal" step="any"><span class="u">%</span></div></div>
+            <div class="row"><label for="taxGov">Tax on government bonds</label>
+              <div class="field"><input id="taxGov" type="text" inputmode="decimal" step="any"><span class="u">%</span></div></div>
+            <div class="row"><label for="taxOther">Tax on corporate bonds, precious metals and cash interest</label>
+              <div class="field"><input id="taxOther" type="text" inputmode="decimal" step="any"><span class="u">%</span></div></div>
+            <div class="row"><label for="taxWealth">Yearly wealth or stamp tax<span class="hint">On the value of your investments.</span></label>
+              <div class="field"><input id="taxWealth" type="text" inputmode="decimal" step="any"><span class="u">%/yr</span></div></div>
+          </div>
+        </section>
+
+        <section class="grp" data-grp="rules" data-full>
+          <button type="button" class="grp-h" aria-expanded="true"><b>Retirement rules</b></button>
+          <div class="grp-b">
+            <div class="row"><label for="cashMonths">Cash buffer<span class="hint">Months of spending kept in cash.</span></label>
+              <div class="field"><input id="cashMonths" type="text" inputmode="numeric" step="1" value="6"><span class="u">months</span></div></div>
+            <div class="row"><label for="cashRate">Interest on cash</label>
+              <div class="field"><input id="cashRate" type="text" inputmode="decimal" step="any" value="2.5"><span class="u">%/yr</span></div></div>
+            <div class="chips">
+              <span class="lbl">Sell months</span>
+              <p class="subnote">The only months you top up the cash buffer (4 suggested). A month is skipped while stocks are in a dip.</p>
+              <div class="months" id="sellMonths"></div>
+            </div>
+            <div class="row"><label for="dipDrop">A dip is a fall from the peak of</label>
+              <div class="field"><input id="dipDrop" type="text" inputmode="decimal" step="any" value="10"><span class="u">%</span></div></div>
+            <div class="row"><label for="maxWait">Wait for a dip at most</label>
+              <div class="field"><input id="maxWait" type="text" inputmode="numeric" step="1" value="24"><span class="u">months</span></div></div>
+            <div class="row"><label for="maxDelay">Extra years you'd keep investing<span class="hint">If you're short of the capital in your target year.</span></label>
+              <div class="field"><input id="maxDelay" type="text" inputmode="numeric" min="0" max="10" step="1" value="3"><span class="u">yrs</span></div></div>
+            <div class="row"><label for="blockYears">History block length<span class="hint">Block Monte Carlo joins blocks of this length.</span></label>
+              <div class="field"><input id="blockYears" type="text" inputmode="decimal" min="0.1" step="any" value="5"><span class="u">yrs</span></div></div>
+          </div>
+        </section>
+
+        <section class="grp" data-min>
+          <div class="grp-b">
+            <details class="sub">
+              <summary>What Minimal assumes</summary>
+              <p class="subnote">Standard, slightly cautious. Switch to Complete to change any of them.</p>
+              <ul class="fixedlist" id="fixedList"></ul>
+            </details>
+          </div>
+        </section>
+      </div>
+    </form>
+
+    <div class="stack" id="stack">
+      <section class="panel wide stale-able" id="results" aria-labelledby="resH" aria-busy="true">
+        <div class="ph"><h2 id="resH">Results</h2><span class="pill mute" id="resState">calculating</span></div>
+        <p class="verdict" id="verdict">Calculating the example plan…</p>
+        <div class="methods" id="methods"></div>
+        <p class="dipline" id="dipVerdict"></p>
+      </section>
+
+      <section class="panel wide stale-able" aria-labelledby="fanH">
+        <div class="ph">
+          <h2 id="fanH">Your money over time, today's money</h2>
+          <div class="seg" role="radiogroup" aria-label="Method shown in the chart">
+            <label><input type="radio" name="fanMethod" value="mc" checked><span>Monte Carlo</span></label>
+            <label><input type="radio" name="fanMethod" value="block"><span>Block Monte Carlo</span></label>
+          </div>
+        </div>
+        <p class="readout" id="fanReadout"></p>
+        <div class="chart" id="fan"></div>
+        <ul class="legend">
+          <li><span class="sw o"></span>8 in 10 futures</li>
+          <li><span class="sw i"></span>Middle half</li>
+          <li><span class="sw l"></span>Median</li>
+          <li><span class="sw c"></span>Capital you need</li>
+        </ul>
+        <p class="capnote" id="capNote" hidden>The best 10% of futures run above the top of the chart.</p>
+        <details class="numbers">
+          <summary>Show the numbers</summary>
+          <div class="tw"><table class="tbl" id="fanTable"></table></div>
+        </details>
+      </section>
+
+      <section class="panel stale-able" aria-labelledby="whenH">
+        <div class="ph"><h2 id="whenH">When you retire</h2></div>
+        <p class="note" id="retireNote"></p>
+        <div id="retireBars" style="margin-top:12px"></div>
+        <div class="tw"><table class="tbl" id="retireTable"></table></div>
+      </section>
+
+      <section class="panel stale-able" aria-labelledby="spendH">
+        <div class="ph"><h2 id="spendH">Monthly spending in retirement</h2></div>
+        <p class="note" id="spendNote">In today's money, for the first month of retirement.</p>
+        <div class="spend" id="spendList" style="margin-top:10px"></div>
+      </section>
+
+      <section class="panel wide stale-able" aria-labelledby="stressH" id="stressPanel">
+        <div class="ph"><h2 id="stressH">Retire into real history</h2></div>
+        <p class="note">What would have happened if you had retired on a real date with the capital above, spending as in your plan. Real returns and inflation from history replace the simulations, with inflation moved to your country's average. Sell months follow the real calendar.</p>
+        <div class="sctl">
+          <div class="line">
+            <span class="lbl" id="sPresetLbl">Start</span>
+            <div class="seg" role="radiogroup" aria-labelledby="sPresetLbl" id="sPresets">
+              <label><input type="radio" name="sPreset" value="2000-01" checked><span>Jan 2000</span></label>
+              <label><input type="radio" name="sPreset" value="2007-10"><span>Oct 2007</span></label>
+              <label><input type="radio" name="sPreset" value="2022-01"><span>Jan 2022</span></label>
+            </div>
+            <div class="field"><select id="sMonth" aria-label="Start month"></select></div>
+            <div class="field"><select id="sYear" aria-label="Start year"></select></div>
+          </div>
+          <div class="line">
+            <span class="lbl" id="sCapLbl">Capital</span>
+            <div class="seg" role="radiogroup" aria-labelledby="sCapLbl" id="sCaps"></div>
+          </div>
+        </div>
+        <p class="sout" id="stressOut" aria-live="polite"></p>
+        <p class="smeta" id="stressMeta"></p>
+        <p class="readout" id="stressReadout"></p>
+        <div class="chart" id="stressChart"></div>
+        <ul class="legend">
+          <li><span class="sw l"></span>Your money, today's money</li>
+          <li><span class="sw c"></span>Starting capital</li>
+          <li><span class="sw d"></span>Stocks 10% or more below their peak: no top-ups</li>
+        </ul>
+        <details class="numbers">
+          <summary>Show the numbers</summary>
+          <div class="tw"><table class="tbl" id="stressTable"></table></div>
+        </details>
+      </section>
+
+      <section class="panel wide" aria-labelledby="plansH" id="plansPanel">
+        <div class="ph"><h2 id="plansH">Saved plans</h2></div>
+        <form class="save" id="saveForm">
+          <div class="field"><input id="planName" type="text" maxlength="60" placeholder="Name this plan, e.g. Retire at 50" aria-label="Plan name" autocomplete="off"></div>
+          <button type="submit" class="btn" id="saveBtn">Save this plan</button>
+        </form>
+        <p class="note" id="saveNote">Plans are kept in this browser only. Tick two to compare them.</p>
+        <ul class="plans" id="planList"></ul>
+        <div class="compare" id="compare"></div>
+      </section>
+
+      <section class="panel wide how" aria-labelledby="howH">
+        <div class="ph"><h2 id="howH">How the numbers work</h2></div>
+        <ul>
+          <li><b>Capital you need</b> is the smallest amount, rounded up, that runs out before your "plan until" age in no more than your accepted share of futures, if you retire in January of your target year. It is in today's money.</li>
+          <li><b>Invest every month</b> is the smallest fixed monthly amount, rounded up, that keeps the whole plan within that share, counting what you already have invested. If your money is short of the capital in January of the target year, you keep investing for another year, up to the limit. After that you retire regardless.</li>
+          <li><b>Waiting for a dip</b> keeps new money in cash until stocks are the chosen percentage below their peak (today counts as a peak), and invests anyway after the maximum wait. Money already invested stays invested.</li>
+          <li><b>In retirement</b> you hold a cash buffer of several months of spending. It is topped up only in your sell months, and not while stocks are in a dip. If the cash would not cover next month, just one month is sold.</li>
+          <li><b>Taxes</b> are charged on the gain part of each sale, using your average purchase cost. A yearly wealth or stamp tax is taken each January, and cash interest is taxed at the "other" rate. Country rates are rough starting points checked in October 2026. Check your own situation.</li>
+          <li><b>Inflation is random.</b> In Monte Carlo it drifts around your average and sometimes spikes by 5 points, then fades. Block Monte Carlo replays real US inflation month by month, moved to your average, so 2022 comes with its bond losses. Spending follows inflation; the monthly investment and a mortgage payment stay fixed in money, so inflation erodes them.</li>
+          <li><b>Monte Carlo</b> draws random monthly returns from the growth, volatility and correlations in Complete. <b>Block Monte Carlo</b> joins random blocks of real monthly returns, after inflation, from <span id="histWindow">history</span>: US and developed-world stocks (Ken French Data Library), US 10-year Treasuries and Baa corporate bonds (rebuilt from <a href="https://fred.stlouisfed.org/" target="_blank" rel="noopener">FRED</a> yields), and precious metals, half gold and half the all-precious-metals index (<a href="https://www.worldbank.org/en/research/commodity-markets" target="_blank" rel="noopener">World Bank</a> prices).</li>
+          <li><b>Limits of the history:</b> it starts in 1990, so it misses the 1970s inflation and the early-1980s bond crash. US stocks grew <span id="histUs">about 8%</span> a year above inflation and gold rallied, so the history leans optimistic. Bond series come from monthly averages, which smooths their swings. Corporate bonds ignore defaults, and the data are in US dollars, so currency moves are not included.</li>
+          <li><b>Minimal</b> fixes the settings listed in its plan panel, slightly cautious: returns half a point below Complete's (in both methods), inflation half a point above your country's, and cash at 2%.</li>
+          <li>Not included: state pension, other income in retirement, and cutting spending in bad years. This is a planning simulation, not financial advice.</li>
+        </ul>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="statusbar">
+  <div class="progress" id="progress" data-done></div>
+  <div class="sb-in">
+    <p class="log" id="status" role="status" aria-live="polite" data-state="run"><span class="dot" aria-hidden="true"></span><span id="statusText">Calculating the example plan…</span></p>
+    <button class="run" type="submit" form="plan" id="calc">Calculate</button>
+  </div>
+</div>
+
+<script src="history.js"></script>
+<script src="engine.js"></script>
+<script>
+(function () {
+  'use strict';
+  const E = window.PacEngine;
+  const HIST = window.PAC_HISTORY;
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
+  const today = new Date();
+  const NOW = { year: today.getFullYear(), month: today.getMonth() };
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const PATHS = 2000;
+  const SEED = 20261012;
+  const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Units per EUR, Banque de France reference rates of 9 Oct 2026, rounded. Only used to pre-fill amounts.
+  const CURRENCIES = {
+    EUR: { fx: 1, units: { capital: 10000, monthly: 100 }, step: 10 },
+    USD: { fx: 1.12, units: { capital: 10000, monthly: 100 }, step: 10 },
+    GBP: { fx: 0.85, units: { capital: 10000, monthly: 100 }, step: 10 },
+    CHF: { fx: 0.93, units: { capital: 10000, monthly: 100 }, step: 10 },
+    CAD: { fx: 1.59, units: { capital: 10000, monthly: 100 }, step: 10 },
+    AUD: { fx: 1.61, units: { capital: 10000, monthly: 100 }, step: 10 },
+    JPY: { fx: 177, units: { capital: 1000000, monthly: 10000 }, step: 1000 },
+  };
+
+  // Rough tax and inflation starting points, researched October 2026. cost = cost of living vs Italy (Numbeo 2026, excl. rent).
+  const COUNTRIES = [
+    { id: 'IT', name: 'Italy', currency: 'EUR', inflation: 2, equity: 26, gov: 12.5, other: 26, wealth: 0.2, cost: 1.0,
+      note: 'Italy: 26% on gains, 12.5% on Italian and white-list government bonds (an ETF gets it only on its share of those bonds), and 0.2% a year stamp duty (imposta di bollo).' },
+    { id: 'ES', name: 'Spain', currency: 'EUR', inflation: 2, equity: 21, gov: 21, other: 21, wealth: 0, cost: 0.85,
+      note: 'Spain: savings income is taxed 19% to 30% by band; 21% fits withdrawals of about €30,000 to €50,000 a year. Wealth tax only applies above €700,000 per person, and regions differ.' },
+    { id: 'PT', name: 'Portugal', currency: 'EUR', inflation: 2, equity: 28, gov: 28, other: 28, wealth: 0, cost: 0.8,
+      note: 'Portugal: a flat 28% on investment gains.' },
+    { id: 'FR', name: 'France', currency: 'EUR', inflation: 2, equity: 31.4, gov: 31.4, other: 31.4, wealth: 0, cost: 1.1,
+      note: 'France: the flat tax (PFU) is 31.4% after the 2026 rise in social charges. A high-income surcharge can add up to 4%.' },
+    { id: 'DE', name: 'Germany', currency: 'EUR', inflation: 2, equity: 18.46, gov: 26.375, other: 26.375, wealth: 0, cost: 1.1,
+      note: 'Germany: 26.375% including the solidarity surcharge. Equity funds get a 30% partial exemption, which makes 18.46%. Church tax and the €1,000 allowance are not included.' },
+    { id: 'CH', name: 'Switzerland', currency: 'CHF', inflation: 1, equity: 0, gov: 0, other: 0, wealth: 0.2, cost: 1.8,
+      note: 'Switzerland: private capital gains are tax-free. Wealth tax depends on the canton; 0.2% is a rough middle value, not verified. Interest and dividends are taxed as income, which is not modelled.' },
+    { id: 'GB', name: 'United Kingdom', currency: 'GBP', inflation: 2, equity: 18, gov: 18, other: 18, wealth: 0, cost: 1.1,
+      note: 'United Kingdom: capital gains tax is 18% in the basic band and 24% above it. Investments inside an ISA are tax-free; set the rates to 0 if that is you.' },
+    { id: 'US', name: 'United States', currency: 'USD', inflation: 2, equity: 15, gov: 22, other: 22, wealth: 0, cost: 1.1,
+      note: 'United States: long-term gains are taxed 0%, 15% or 20%; 15% is assumed. Bond income is taxed as ordinary income (22% is an estimate). State taxes are not included.' },
+    { id: 'CA', name: 'Canada', currency: 'CAD', inflation: 2, equity: 12, gov: 25, other: 25, wealth: 0, cost: 1.05,
+      note: 'Canada: half of a capital gain is taxable; 12% assumes about a 24% marginal rate. The interest rate is an estimate. Not verified.' },
+    { id: 'JP', name: 'Japan', currency: 'JPY', inflation: 2, equity: 20.315, gov: 20.315, other: 20.315, wealth: 0, cost: 0.75,
+      note: 'Japan: 20.315% on gains and dividends. NISA accounts are tax-free.' },
+    { id: 'AU', name: 'Australia', currency: 'AUD', inflation: 2.5, equity: 8.5, gov: 17, other: 17, wealth: 0, cost: 1.1,
+      note: 'Australia: assumes the 50% capital gains discount in the 15% band plus the Medicare levy. The May 2026 budget proposes replacing the discount from July 2027. Bond rate is an estimate.' },
+    { id: 'XX', name: 'Somewhere else', currency: null,
+      note: 'Enter your own tax rates and inflation.' },
+  ];
+
+  const CATEGORIES = [
+    { id: 'groceries', label: 'Groceries', kind: 'essential' },
+    { id: 'bills', label: 'Bills and utilities', kind: 'essential' },
+    { id: 'transport', label: 'Transport', kind: 'essential' },
+    { id: 'health', label: 'Health and insurance', kind: 'essential' },
+    { id: 'basics', label: 'Phone, internet and other basics', kind: 'essential' },
+    { id: 'eatingOut', label: 'Eating out and bars', kind: 'extra' },
+    { id: 'travel', label: 'Travel', kind: 'extra' },
+    { id: 'hobbies', label: 'Hobbies and sport', kind: 'extra' },
+    { id: 'shopping', label: 'Shopping and clothes', kind: 'extra' },
+    { id: 'fun', label: 'Subscriptions and nights out', kind: 'extra' },
+  ];
+  // One adult in Italy, euros per month, same order as CATEGORIES.
+  const LIFESTYLES = {
+    frugal: [250, 150, 80, 50, 40, 60, 80, 30, 40, 20],
+    moderate: [350, 200, 150, 80, 60, 150, 200, 80, 100, 40],
+    comfortable: [450, 250, 250, 120, 80, 300, 400, 150, 200, 60],
+    lavish: [600, 350, 400, 200, 120, 600, 900, 300, 400, 100],
+  };
+  const ADULT_FACTOR = { 1: 1, 2: 1.5 };
+
+  const ASSETS = [
+    { id: 'usStocks', label: 'US stocks', w: 30, r: 5, v: 16 },
+    { id: 'worldStocks', label: 'World stocks', w: 40, r: 4.5, v: 15 },
+    { id: 'corpBonds', label: 'Corporate bonds', w: 10, r: 1.5, v: 7 },
+    { id: 'govBonds', label: 'Government bonds', w: 15, r: 1, v: 6 },
+    { id: 'metals', label: 'Precious metals', w: 5, r: 1.5, v: 15 },
+  ];
+  const SHORT = ['US', 'World', 'Corp', 'Gov', 'Metals'];
+  const HOME_BASE = { mortgage: 600, rent: 800 };
+  const CHILD_BASE = 400;
+
+  // Minimal: standard settings, slightly cautious next to Complete's defaults.
+  const MIN = { endAge: 95, fail: 0.05, cut: 0.005, inflAdd: 0.005, cashRate: 0.02, cashMonths: 6, sell: [3, 6, 10, 11], drop: 0.1, maxWait: 24, maxDelay: 3, block: 5, spread: 0.015, spikeYears: 15 };
+
+  const FIRE_NOTES = {
+    lean: 'Lean: only your essentials are paid for in retirement.',
+    regular: 'Regular: essentials and extras, as you live today.',
+    fat: 'Fat: everything you spend today plus 25% headroom.',
+    barista: 'Barista: everything you spend today, minus part-time income until the age you choose.',
+  };
+
+  const STRESS_NOTES = {
+    '2000-01': 'Just before the dot-com crash, then 2008.',
+    '2007-10': 'The market peak before the 2008 crash.',
+    '2022-01': 'Before the 2022 inflation and bond crash.',
+  };
+
+  // Browser storage: per-viewer conveniences only, and it may be unavailable.
+  const store = {
+    get(k, d) {
+      try {
+        const v = localStorage.getItem(k);
+        return v == null ? d : JSON.parse(v);
+      } catch (e) {
+        return d;
+      }
+    },
+    set(k, v) {
+      try {
+        localStorage.setItem(k, JSON.stringify(v));
+        return true;
+      } catch (e) {
+        return false;
+      }
+    },
+  };
+  const PLANS_KEY = 'pacfire.plans.v1';
+  const MODE_KEY = 'pacfire.mode';
+
+  // ---------- state ----------
+  let last = null; // { result, inp, currency, mode, country }
+  let running = false;
+  let stale = false;
+  let changedWhileRunning = false;
+  let first = true;
+  let stressRes = null;
+
+  const mode = () => radio('mode') || 'min';
+  const cur = () => $('#currency').value;
+  const country = () => COUNTRIES.find((c) => c.id === $('#country').value);
+  const radio = (name) => ($(`input[name="${name}"]:checked`) || {}).value;
+  // Inputs are text fields in the page's own format: money takes "," as thousands separator,
+  // rates and years take "," or "." as the decimal point.
+  function val(el) {
+    const t = String(el.value).trim();
+    if (el.dataset.fmt === 'money') return parseFloat(t.replace(/[\s,'’_]/g, ''));
+    return parseFloat(t.replace(',', '.'));
+  }
+  const num = (id) => val($('#' + id));
+  const fmtInput = (v) => (Number.isFinite(v) ? Math.round(v).toLocaleString('en') : '');
+  const roundK = (x) => Math.round(x / 1000) * 1000;
+  const roundTo = (x, step) => Math.round(x / step) * step;
+  const resCur = () => (last ? last.currency : cur());
+  const money = (x, c) => new Intl.NumberFormat('en', { style: 'currency', currency: c, maximumFractionDigits: 0 }).format(x);
+  const fmtMoney = (x) => money(x, cur());
+  const fmtRes = (x) => money(x, resCur());
+  const compact = (x, c) => new Intl.NumberFormat('en', { style: 'currency', currency: c, notation: 'compact', maximumFractionDigits: x >= 1e6 ? 2 : 0 }).format(x);
+  const fmtCompact = (x) => compact(x, resCur());
+  const pct = (x, d = 0) => (x * 100).toFixed(d) + '%';
+  const monthLabel = (y, m) => `${MONTHS[m]} ${y}`;
+  const histDate = (h) => {
+    const [sy, sm] = HIST.start.split('-').map(Number);
+    const k = sm - 1 + h;
+    return { y: sy + Math.floor(k / 12), m: k % 12 };
+  };
+  const histIndex = (y, m) => {
+    const [sy, sm] = HIST.start.split('-').map(Number);
+    return (y - sy) * 12 + (m - (sm - 1));
+  };
+  const duration = (months) => {
+    const y = Math.floor(months / 12);
+    const m = months % 12;
+    return [y ? `${y} year${y > 1 ? 's' : ''}` : '', m ? `${m} month${m > 1 ? 's' : ''}` : ''].filter(Boolean).join(' and ') || '0 months';
+  };
+
+  function costFactor() {
+    const c = country();
+    return c && c.cost ? c.cost : 1;
+  }
+  function moneyDefault(base, scale) {
+    const k = CURRENCIES[cur()];
+    const v = base * k.fx * (scale === 'cost' ? costFactor() : 1);
+    return roundTo(v, scale === 'fx' ? k.step * 100 : k.step);
+  }
+
+  // ---------- build the form ----------
+  function buildSelects() {
+    $('#country').innerHTML = COUNTRIES.map((c) => `<option value="${c.id}">${c.name}</option>`).join('');
+    $('#currency').innerHTML = Object.keys(CURRENCIES).map((c) => `<option value="${c}">${c}</option>`).join('');
+  }
+
+  function buildSpending() {
+    $('#spendTable tbody').innerHTML = CATEGORIES.map(
+      (c) => `<tr data-kind="${c.kind}">
+        <td><label for="sp-${c.id}">${c.label}</label></td>
+        <td class="tagcell"><button type="button" class="tag" data-kind="${c.kind}" aria-label="${c.label}: ${c.kind}, tap to switch">${c.kind === 'essential' ? 'Essential' : 'Extra'}</button></td>
+        <td class="amt"><div class="field"><input id="sp-${c.id}" data-fmt="money" type="text" inputmode="decimal" step="any" min="0"><span class="u cur"></span></div></td>
+      </tr>`,
+    ).join('');
+  }
+
+  function buildAssets() {
+    $('#assetTable tbody').innerHTML = ASSETS.map(
+      (a) => `<tr>
+        <td>${a.label}</td>
+        <td><div class="field"><input id="w-${a.id}" type="text" inputmode="decimal" step="any" value="${a.w}" aria-label="${a.label} split"><span class="u">%</span></div></td>
+        <td><div class="field"><input id="r-${a.id}" type="text" inputmode="decimal" step="any" value="${a.r}" aria-label="${a.label} growth after inflation"><span class="u">%</span></div></td>
+        <td><div class="field"><input id="v-${a.id}" type="text" inputmode="decimal" step="any" value="${a.v}" aria-label="${a.label} volatility"><span class="u">%</span></div></td>
+        <td class="hist" id="h-${a.id}">–</td>
+      </tr>`,
+    ).join('');
+    let html = '<tr><th></th>' + SHORT.map((s) => `<th>${s}</th>`).join('') + '</tr>';
+    for (let i = 0; i < 5; i++) {
+      html += `<tr><th>${SHORT[i]}</th>`;
+      for (let j = 0; j < 5; j++) {
+        if (j === i) html += '<td class="fixed">1</td>';
+        else if (j > i)
+          html += `<td><div class="field"><input id="c-${i}-${j}" type="text" inputmode="decimal" step="any" min="-1" max="1" value="${E.DEFAULT_CORR[i][j]}" aria-label="Correlation ${ASSETS[i].label} and ${ASSETS[j].label}"></div></td>`;
+        else html += `<td class="fixed" data-mirror="c-${j}-${i}">${E.DEFAULT_CORR[i][j]}</td>`;
+      }
+      html += '</tr>';
+    }
+    $('#corrTable').innerHTML = html;
+  }
+
+  function buildMonths() {
+    const defaults = new Set(MIN.sell);
+    $('#sellMonths').innerHTML = MONTHS.map(
+      (m, i) => `<label><input type="checkbox" name="sell" value="${i}" ${defaults.has(i) ? 'checked' : ''} aria-label="${MONTH_NAMES[i]}"><span>${m}</span></label>`,
+    ).join('');
+  }
+
+  function buildStressControls() {
+    $('#sMonth').innerHTML = MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+    const a = histDate(0).y;
+    const b = histDate(HIST.months - 13).y;
+    let o = '';
+    for (let y = a; y <= b; y++) o += `<option value="${y}">${y}</option>`;
+    $('#sYear').innerHTML = o;
+    $('#sMonth').value = '0';
+    $('#sYear').value = '2000';
+  }
+
+  function addKid(birthYear, monthly) {
+    if (typeof monthly === 'number') monthly = fmtInput(monthly);
+    const row = document.createElement('div');
+    row.className = 'kid';
+    const id = 'kid' + Math.random().toString(36).slice(2, 8);
+    row.innerHTML = `
+      <div><label class="lbl" for="${id}-y">Birth year</label><div class="field"><input id="${id}-y" class="kid-year" type="text" inputmode="numeric" step="1" value="${birthYear}"></div></div>
+      <div><label class="lbl" for="${id}-m">Monthly cost</label><div class="field"><input id="${id}-m" class="kid-cost" data-fmt="money" type="text" inputmode="decimal" step="any" value="${monthly}" data-scale="cost" data-money="${CHILD_BASE}"><span class="u cur"></span></div></div>
+      <button type="button" class="btn x" aria-label="Remove this child">Remove</button>`;
+    row.querySelector('button').addEventListener('click', () => {
+      row.remove();
+      onChange();
+    });
+    $('#kids').appendChild(row);
+    updateCurrencyLabels();
+    return row;
+  }
+
+  // ---------- presets ----------
+  function fillLifestyle() {
+    const key = radio('lifestyle');
+    if (!LIFESTYLES[key]) return;
+    const f = ADULT_FACTOR[radio('adults')] || 1;
+    CATEGORIES.forEach((c, i) => {
+      $('#sp-' + c.id).value = fmtInput(moneyDefault(LIFESTYLES[key][i] * f, 'cost'));
+    });
+  }
+
+  function refreshMoneyDefaults() {
+    $$('input[data-scale]').forEach((el) => {
+      if (el.dataset.dirty) return;
+      let base = parseFloat(el.dataset.money);
+      if (el.id === 'homePayment') base = HOME_BASE[radio('home')] || 0;
+      if (!isNaN(base)) el.value = fmtInput(moneyDefault(base, el.dataset.scale));
+    });
+    fillLifestyle();
+  }
+
+  function applyCountry() {
+    const c = country();
+    $('#countryNote').textContent = c.note;
+    if (c.currency) {
+      $('#currency').value = c.currency;
+      $('#inflation').value = c.inflation;
+      $('#taxEquity').value = c.equity;
+      $('#taxGov').value = c.gov;
+      $('#taxOther').value = c.other;
+      $('#taxWealth').value = c.wealth;
+    }
+    updateCurrencyLabels();
+    refreshMoneyDefaults();
+  }
+
+  function updateCurrencyLabels() {
+    const sym = new Intl.NumberFormat('en', { style: 'currency', currency: cur(), currencyDisplay: 'narrowSymbol' })
+      .formatToParts(0)
+      .find((p) => p.type === 'currency').value;
+    $$('.u.cur').forEach((el) => (el.textContent = sym));
+  }
+
+  // The one-number spending field scales the category table, keeping its proportions.
+  function scaleSpending(total) {
+    const inputs = CATEGORIES.map((c) => $('#sp-' + c.id));
+    const now = inputs.reduce((s, el) => s + (val(el) || 0), 0);
+    if (!(total >= 0)) return;
+    const vals = inputs.map((el) => (now > 0 ? ((val(el) || 0) * total) / now : total / inputs.length));
+    const rounded = vals.map((v) => Math.round(v));
+    let big = 0;
+    rounded.forEach((v, i) => (v > rounded[big] ? (big = i) : 0));
+    rounded[big] += Math.round(total) - rounded.reduce((s, v) => s + v, 0);
+    inputs.forEach((el, i) => (el.value = fmtInput(Math.max(0, rounded[i]))));
+  }
+
+  // ---------- live helpers ----------
+  function spendingTotals() {
+    const t = { essentials: 0, extras: 0 };
+    $$('#spendTable tbody tr').forEach((tr) => {
+      const v = val($('input', tr)) || 0;
+      t[tr.dataset.kind === 'essential' ? 'essentials' : 'extras'] += v;
+    });
+    return t;
+  }
+
+  function minimalSettings() {
+    const c = country();
+    const infl = (c.currency ? c.inflation : num('inflation') || 2) / 100 + MIN.inflAdd;
+    const alloc = ASSETS.map((a) => `${a.w}%`).join(' / ');
+    return [
+      ['Portfolio', `70% stocks, 25% bonds, 5% metals`],
+      ['Split US / World / Corp / Gov / Metals', alloc],
+      ['Growth after inflation, a year', ASSETS.map((a) => (a.r - MIN.cut * 100).toFixed(1)).join(' / ') + '%'],
+      ['History', 'returns 0.5 points lower'],
+      ['Inflation', `${(infl * 100).toFixed(1)}% average, varies at random`],
+      ['Taxes', c.currency ? `${c.name} rates` : 'rates in Complete'],
+      ['Money lasts until', `age ${MIN.endAge}`],
+      ['Accepted chance of running out', pct(MIN.fail)],
+      ['Cash buffer', `${MIN.cashMonths} months at ${pct(MIN.cashRate, 0)}`],
+      ['Sell months', MIN.sell.map((m) => MONTHS[m]).join(', ')],
+      ['Extra years if short', `up to ${MIN.maxDelay}`],
+      ['Spending', 'Regular FIRE, no children'],
+    ];
+  }
+
+  function updateLive() {
+    const t = spendingTotals();
+    const total = t.essentials + t.extras;
+    $('#totEss').textContent = fmtMoney(t.essentials);
+    $('#totExt').textContent = fmtMoney(t.extras);
+    $('#spendSum').textContent = fmtMoney(total) + '/mo';
+    if (document.activeElement !== $('#mSpend')) $('#mSpend').value = fmtInput(total);
+
+    let s = 0;
+    ASSETS.forEach((a) => (s += num('w-' + a.id) || 0));
+    const ok = Math.abs(s - 100) < 0.05;
+    const txt = (Math.round(s * 10) / 10).toString() + '%';
+    $('#allocSum').textContent = txt;
+    $('#allocSum').className = ok ? 'mono' : 'mono bad';
+    $('#allocSumTop').textContent = ok ? ASSETS.map((a) => Math.round(num('w-' + a.id) || 0)).join('/') : `adds up to ${txt}`;
+    $('#allocSumTop').className = ok ? 'sum' : 'sum bad';
+
+    const fire = radio('fire');
+    $('#fireNote').textContent = FIRE_NOTES[fire];
+    $('#baristaFields').hidden = fire !== 'barista';
+
+    const home = radio('home');
+    $('#homeFields').hidden = home === 'owned';
+    $('#paidOffRow').hidden = home !== 'mortgage';
+    $('#homePaymentLbl').textContent = home === 'rent' ? 'Monthly rent' : 'Monthly mortgage payment';
+
+    const y = Math.round(num('retireYear'));
+    const age = num('age');
+    if (!isNaN(y) && !isNaN(age)) {
+      const months = Math.max(0, (y - NOW.year) * 12 - (NOW.month + 1));
+      const at = Math.floor(age + (months + 1) / 12);
+      $('#retireHint').textContent = months > 0 ? `January ${y}, at about ${at}.` : 'Now: no time left to invest.';
+    } else $('#retireHint').textContent = '';
+
+    $$('#corrTable [data-mirror]').forEach((td) => {
+      const src = $('#' + td.dataset.mirror);
+      td.textContent = src ? src.value : '';
+    });
+
+    const plan = $('#plan');
+    plan.dataset.mode = mode();
+    if (country().id === 'XX') plan.dataset.xx = '';
+    else delete plan.dataset.xx;
+    $('#fixedList').innerHTML = minimalSettings().map(([k, v]) => `<li><span>${k}</span><b>${v}</b></li>`).join('');
+  }
+
+  function showHistoryStats() {
+    const label = `${HIST.start.slice(0, 4)}–${HIST.end.slice(0, 4)}`;
+    $$('.histspan').forEach((el) => (el.textContent = el.tagName === 'TH' ? label : `history (${label})`));
+    const [sy, sm] = HIST.start.split('-').map(Number);
+    const [ey, em] = HIST.end.split('-').map(Number);
+    $('#histWindow').textContent = `${MONTH_NAMES[sm - 1]} ${sy} to ${MONTH_NAMES[em - 1]} ${ey}`;
+    ASSETS.forEach((a) => {
+      const r = HIST.real[a.id];
+      let lg = 0;
+      let s = 0;
+      let s2 = 0;
+      for (const x of r) {
+        lg += Math.log(1 + x);
+        s += x;
+        s2 += x * x;
+      }
+      const n = r.length;
+      const growth = Math.exp((lg / n) * 12) - 1;
+      const vol = Math.sqrt((s2 / n - (s / n) ** 2) * 12);
+      $('#h-' + a.id).textContent = `${(growth * 100).toFixed(1)} / ${(vol * 100).toFixed(0)}%`;
+      if (a.id === 'usStocks') $('#histUs').textContent = `${(growth * 100).toFixed(1)}%`;
+    });
+  }
+
+  // ---------- read inputs ----------
+  class FieldError extends Error {
+    constructor(field, message) {
+      super(message);
+      this.field = field;
+    }
+  }
+
+  function readInputs() {
+    const isMin = mode() === 'min';
+    const need = (id, label) => {
+      const v = num(id);
+      if (isNaN(v)) throw new FieldError(id, `Fill in ${label}.`);
+      return v;
+    };
+    const home = radio('home');
+    const children = isMin
+      ? []
+      : $$('.kid')
+          .map((row) => ({ birthYear: Math.round(val($('.kid-year', row))), monthly: val($('.kid-cost', row)) || 0 }))
+          .filter((c) => !isNaN(c.birthYear));
+    const common = {
+      units: CURRENCIES[cur()].units,
+      age: need('age', 'your age'),
+      retireYear: Math.round(need('retireYear', 'the year you retire')),
+      spending: spendingTotals(),
+      housing: {
+        kind: home,
+        payment: home === 'owned' ? 0 : need('homePayment', home === 'rent' ? 'your rent' : 'your mortgage payment'),
+        paidOffYear: home === 'mortgage' ? need('paidOffYear', 'the year the mortgage is paid off') : 0,
+      },
+      existing: Math.max(0, num('existing') || 0),
+      paths: PATHS,
+      seed: SEED,
+    };
+    if (common.age < 16 || common.age > 90) throw new FieldError('age', 'Enter an age between 16 and 90.');
+    if (common.spending.essentials + common.spending.extras <= 0) throw new FieldError(isMin ? 'mSpend' : 'sp-groceries', 'Enter what you spend each month.');
+
+    if (isMin) {
+      const c = country();
+      const tx = c.currency ? c : { equity: num('taxEquity') || 0, gov: num('taxGov') || 0, other: num('taxOther') || 0, wealth: num('taxWealth') || 0 };
+      const alloc = {};
+      const returns = {};
+      const vols = {};
+      ASSETS.forEach((a) => {
+        alloc[a.id] = a.w / 100;
+        returns[a.id] = a.r / 100 - MIN.cut;
+        vols[a.id] = a.v / 100;
+      });
+      return checkTimeline({
+        ...common,
+        endAge: MIN.endAge,
+        failTarget: MIN.fail,
+        inflation: (c.currency ? c.inflation : num('inflation') || 2) / 100 + MIN.inflAdd,
+        inflationRisk: { spread: MIN.spread, spikeYears: MIN.spikeYears },
+        historyCut: MIN.cut,
+        fireType: 'regular',
+        barista: { income: 0, untilAge: 0 },
+        children: [],
+        independentAge: 25,
+        alloc,
+        returns,
+        vols,
+        corr: E.DEFAULT_CORR,
+        taxes: { equity: tx.equity / 100, gov: tx.gov / 100, other: tx.other / 100, wealth: tx.wealth / 100 },
+        cash: { months: MIN.cashMonths, rate: MIN.cashRate },
+        sellMonths: MIN.sell,
+        dip: { drop: MIN.drop, maxWaitMonths: MIN.maxWait },
+        maxDelayYears: MIN.maxDelay,
+        blockYears: MIN.block,
+      }, true);
+    }
+
+    const alloc = {};
+    const returns = {};
+    const vols = {};
+    let wsum = 0;
+    ASSETS.forEach((a) => {
+      alloc[a.id] = (num('w-' + a.id) || 0) / 100;
+      wsum += alloc[a.id];
+      returns[a.id] = need('r-' + a.id, `${a.label} growth`) / 100;
+      vols[a.id] = Math.max(0, need('v-' + a.id, `${a.label} volatility`)) / 100;
+    });
+    if (Math.abs(wsum - 1) > 0.0005) throw new FieldError('w-usStocks', `Your portfolio split adds up to ${(wsum * 100).toFixed(1)}%. Make it 100%.`);
+    const corr = E.DEFAULT_CORR.map((row) => row.slice());
+    for (let i = 0; i < 5; i++)
+      for (let j = i + 1; j < 5; j++) {
+        const v = need(`c-${i}-${j}`, 'every correlation');
+        corr[i][j] = corr[j][i] = Math.max(-1, Math.min(1, v));
+      }
+    const inp = {
+      ...common,
+      endAge: need('endAge', 'plan until age'),
+      failTarget: need('failPct', 'the accepted chance of running out') / 100,
+      inflation: need('inflation', 'inflation') / 100,
+      inflationRisk: { spread: Math.max(0, need('inflSpread', 'how much inflation varies')) / 100, spikeYears: Math.max(0, need('inflSpike', 'how often inflation spikes')) },
+      historyCut: 0,
+      fireType: radio('fire'),
+      barista: { income: num('baristaIncome') || 0, untilAge: num('baristaUntil') || 0 },
+      children,
+      independentAge: need('indepAge', 'the age children become independent'),
+      alloc,
+      returns,
+      vols,
+      corr,
+      taxes: {
+        equity: need('taxEquity', 'tax on stock gains') / 100,
+        gov: need('taxGov', 'tax on government bonds') / 100,
+        other: need('taxOther', 'tax on other investments') / 100,
+        wealth: need('taxWealth', 'wealth or stamp tax') / 100,
+      },
+      cash: { months: Math.max(0, need('cashMonths', 'cash buffer months')), rate: need('cashRate', 'interest on cash') / 100 },
+      sellMonths: $$('input[name="sell"]:checked').map((el) => parseInt(el.value, 10)),
+      dip: { drop: need('dipDrop', 'the size of a dip') / 100, maxWaitMonths: Math.max(0, need('maxWait', 'the longest wait for a dip')) },
+      maxDelayYears: Math.max(0, Math.round(need('maxDelay', 'extra years'))),
+      blockYears: Math.max(1 / 12, need('blockYears', 'history block length')),
+    };
+    if (inp.failTarget <= 0 || inp.failTarget > 0.5) throw new FieldError('failPct', 'The accepted chance of running out must be between 0.1% and 50%.');
+    if (inp.dip.drop <= 0 || inp.dip.drop >= 1) throw new FieldError('dipDrop', 'A dip must be between 1% and 99%.');
+    return checkTimeline(inp, false);
+  }
+
+  // The plan must start before the target year and run at least a year past the latest
+  // possible retirement. The engine checks this too; checking here puts the message on a
+  // field the visitor can see in either mode.
+  function checkTimeline(inp, isMin) {
+    const k = inp.maxDelayYears;
+    const minYear = NOW.year + (NOW.month === 11 ? 2 : 1);
+    const room = Math.round((inp.endAge - inp.age) * 12) + NOW.month + 1 - 12 * (k + 1);
+    const maxYear = NOW.year + Math.floor(room / 12);
+    const needs = `${k ? `up to ${k} extra year${k > 1 ? 's' : ''} of investing and ` : ''}a year of retirement`;
+    if (inp.retireYear < minYear) throw new FieldError('retireYear', `Pick ${minYear} or later. You retire in January, and there has to be time to invest first.`);
+    if (!isMin && inp.endAge <= inp.age) throw new FieldError('endAge', 'Enter an age higher than your age today.');
+    if (!isMin && maxYear < minYear) throw new FieldError('endAge', `Raise this age. The earliest retirement is January ${minYear}, and the plan needs room after it for ${needs}.`);
+    if (inp.retireYear > maxYear) throw new FieldError('retireYear', `Pick ${maxYear} or earlier${isMin ? '' : ', or raise "Plan until age"'}. The plan needs room for ${needs} before age ${inp.endAge}.`);
+    return inp;
+  }
+
+  // ---------- status ----------
+  function setStatus(state, text, html) {
+    $('#status').dataset.state = state;
+    $('#statusText')[html ? 'innerHTML' : 'textContent'] = text;
+  }
+
+  function clearFieldErrors() {
+    $$('.ferr').forEach((el) => el.remove());
+    $$('.field[data-bad]').forEach((el) => delete el.dataset.bad);
+    $$('[aria-invalid]').forEach((el) => el.removeAttribute('aria-invalid'));
+  }
+
+  function showError(e) {
+    clearFieldErrors();
+    setStatus('err', e.message);
+    const el = e.field ? $('#' + e.field) : null;
+    if (!el) return;
+    const grp = el.closest('.grp');
+    if (grp && grp.hasAttribute('data-collapsed')) toggleGroup(grp, true);
+    const sub = el.closest('details');
+    if (sub) sub.open = true;
+    const field = el.closest('.field');
+    if (field) field.dataset.bad = '';
+    el.setAttribute('aria-invalid', 'true');
+    const row = el.closest('.row') || field;
+    if (row) {
+      const p = document.createElement('p');
+      p.className = 'ferr';
+      p.id = 'err-' + e.field;
+      p.textContent = e.message;
+      row.insertAdjacentElement(row.classList.contains('row') ? 'beforeend' : 'afterend', p);
+      el.setAttribute('aria-describedby', p.id);
+    }
+    el.focus({ preventScroll: false });
+  }
+
+  // ---------- run ----------
+  async function run() {
+    if (running) return false;
+    let inp;
+    try {
+      inp = readInputs();
+    } catch (e) {
+      if (e instanceof FieldError) showError(e);
+      else setStatus('err', e.message);
+      return false;
+    }
+    clearFieldErrors();
+    running = true;
+    changedWhileRunning = false;
+    const btn = $('#calc');
+    const bar = $('#progress');
+    btn.disabled = true;
+    btn.textContent = 'Calculating';
+    delete bar.dataset.done;
+    bar.style.width = '0';
+    $('#results').setAttribute('aria-busy', 'true');
+    const t0 = performance.now();
+    try {
+      let phase = '';
+      const result = await E.analyze(inp, NOW, HIST, (done, total) => {
+        const p = done / total;
+        bar.style.width = (p * 100).toFixed(1) + '%';
+        // Screen readers hear each method once; the percentage is for the eye only.
+        const name = p < 0.5 ? 'Monte Carlo' : 'block Monte Carlo';
+        if (name !== phase) {
+          phase = name;
+          setStatus('run', `Calculating ${name}<span aria-hidden="true">: <span id="pct"></span></span>`, true);
+        }
+        $('#pct').textContent = Math.round(p * 100) + '%';
+      });
+      const secs = ((performance.now() - t0) / 1000).toFixed(1);
+      last = { result, inp, currency: cur(), mode: mode(), country: country().name };
+      stale = false;
+      delete $('#desk').dataset.stale;
+      render();
+      const fig = figures(result.methods);
+      const lead = fig.monthly === null ? `<b>${fmtRes(fig.capital)}</b>, not reachable in time.` : `<b>${fmtRes(fig.capital)}</b> and <b>${fmtRes(fig.monthly)}</b>/mo.`;
+      setStatus('ok', `<span class="lg-a">${lead}</span><span class="lg-b">${first ? 'Example plan' : 'Up to date'}, ${secs} s.</span>`, true);
+      if (changedWhileRunning) {
+        running = false;
+        onChange();
+      }
+      return true;
+    } catch (e) {
+      setStatus('err', e.message);
+      return false;
+    } finally {
+      running = false;
+      btn.disabled = false;
+      btn.textContent = 'Calculate';
+      bar.style.width = '100%';
+      bar.dataset.done = '';
+      $('#results').setAttribute('aria-busy', 'false');
+      renderPlans();
+    }
+  }
+
+  function onChange() {
+    updateLive();
+    if (running) changedWhileRunning = true;
+    if (last && !running && !stale) {
+      stale = true;
+      $('#desk').dataset.stale = '';
+      $('#resState').className = 'pill warn';
+      $('#resState').textContent = 'out of date';
+      setStatus('stale', 'Plan changed. Calculate to update.');
+      renderPlans();
+    }
+  }
+
+  // ---------- render ----------
+  function figures(methods) {
+    const ms = [methods.mc, methods.block].filter(Boolean);
+    const capital = Math.max(...ms.map((m) => m.capital));
+    const mons = ms.map((m) => m.now.monthly);
+    const monthly = mons.some((x) => x === null) ? null : Math.max(...mons);
+    return { capital, monthly };
+  }
+
+  function render() {
+    const { result: r, inp } = last;
+    const mc = r.methods.mc;
+    const bl = r.methods.block;
+    const list = [
+      ['mc', 'Monte Carlo', 'Random markets from your assumptions', mc],
+      ['block', 'Block Monte Carlo', `Real market history, ${HIST.start.slice(0, 4)}–${HIST.end.slice(0, 4)}`, bl],
+    ];
+    const ry = r.retireDate.year;
+    const startLabel = monthLabel(NOW.month === 11 ? NOW.year + 1 : NOW.year, (NOW.month + 1) % 12);
+    const f = figures(r.methods);
+    const saferKey = bl.capital > mc.capital ? 'block' : 'mc';
+
+    $('#resState').className = 'pill ok';
+    $('#resState').textContent = first ? 'example plan' : 'up to date';
+
+    if (f.monthly === null) {
+      $('#verdict').innerHTML = `You need <b>${fmtRes(f.capital)}</b>, but no monthly amount gets you there in time. Try a later year, a cheaper lifestyle or, in Complete, a higher accepted chance of running out.`;
+    } else if (f.monthly === 0) {
+      $('#verdict').innerHTML = `You need <b>${fmtRes(f.capital)}</b>, and what you have already invested is enough on its own.`;
+    } else {
+      $('#verdict').innerHTML = `Plan with <b>${fmtRes(f.capital)}</b> and invest <b>${fmtRes(f.monthly)}</b> a month from ${startLabel}, the higher figure of each method. You retire in January ${ry}, or up to ${inp.maxDelayYears} years later if markets fall short.`;
+    }
+
+    const nominalRounded = (m) => Math.ceil(m.capitalNominal / inp.units.capital - 1e-9) * inp.units.capital;
+    const mon = (x) => (x === null ? 'Not reachable' : fmtRes(x));
+    $('#methods').innerHTML = list
+      .map(([key, name, desc, m]) => {
+        const hiCap = key === saferKey;
+        const hiMon = f.monthly !== null && m.now.monthly === f.monthly;
+        return `<div class="meth">
+          <h3>${name}</h3>
+          <p class="mdesc">${desc}</p>
+          <dl>
+            <dt>Capital you need<span class="pill flag"${hiCap ? '' : ' data-off aria-hidden="true"'}>plan with this</span></dt>
+            <dd><span class="fig">${fmtRes(m.capital)}</span>
+              <span class="s">${fmtCompact(nominalRounded(m))} in ${ry} money at average inflation. First-year withdrawal ${pct(m.withdrawalRate, 1)}.</span></dd>
+            <dt>Invest every month<span class="pill flag"${hiMon ? '' : ' data-off aria-hidden="true"'}>plan with this</span></dt>
+            <dd><span class="fig">${mon(m.now.monthly)}</span>
+              <span class="s">${m.now.monthly === null ? 'Not reachable in time.' : `Runs out in ${pct(m.now.failRate, 1)} of futures.`}</span></dd>
+            <dt>Waiting for a ${Math.round(inp.dip.drop * 100)}% dip first</dt>
+            <dd><span class="fig sm">${mon(m.dip.monthly)}</span>
+              <span class="s">${m.dip.monthly === null || m.dip.dipHitRate === null ? '' : `The dip came within ${inp.dip.maxWaitMonths} months in ${pct(m.dip.dipHitRate)} of futures.`}</span></dd>
+          </dl>
+        </div>`;
+      })
+      .join('');
+
+    const v = list.map(([, n, , m]) => (m.now.monthly === null || m.dip.monthly === null ? null : { n, d: m.dip.monthly - m.now.monthly }));
+    let dv = '';
+    if (v.every((x) => x)) {
+      if (v.every((x) => x.d > 0)) dv = 'Starting now costs less than waiting for a dip: money parked in cash misses more growth than the dip saves.';
+      else if (v.every((x) => x.d < 0)) dv = 'Waiting for a dip costs less here: the dip usually came soon enough to pay for the time in cash.';
+      else if (v.every((x) => x.d === 0)) dv = 'Waiting for a dip makes no difference to the monthly amount here.';
+      else dv = 'The methods disagree on waiting for a dip. ' + v.map((x) => `${x.n}: ${x.d > 0 ? 'starting now is cheaper' : x.d < 0 ? 'waiting is cheaper' : 'no difference'}`).join('. ') + '.';
+    }
+    $('#dipVerdict').textContent = dv;
+
+    // When you'd retire.
+    const k = inp.maxDelayYears;
+    const cols = ['var(--r1)', 'var(--r2)', 'var(--r3)', 'var(--r4)'];
+    const col = (i) => cols[Math.min(i, cols.length - 1)];
+    $('#retireNote').textContent =
+      k > 0
+        ? `Share of futures, investing the monthly amount from now. You keep investing while short of the capital, for up to ${k} more year${k > 1 ? 's' : ''}.`
+        : 'You retire in your target year in every future.';
+    $('#retireBars').innerHTML = list
+      .map(([, n, , m]) =>
+        m.now.monthly === null
+          ? ''
+          : `<div class="stackrow"><span class="lbl">${n}</span><div class="stackbar" role="img" aria-label="${n}: ${m.now.retireDist.map((s, i) => `${pct(s)} in ${ry + i}`).join(', ')}">${m.now.retireDist
+              .map((s, i) => (s > 0 ? `<span style="width:${s * 100}%;background:${col(i)}" title="January ${ry + i}: ${pct(s)}"></span>` : ''))
+              .join('')}</div></div>`,
+      )
+      .join('');
+    let rows = '';
+    for (let i = 0; i <= k; i++) {
+      const label = `Jan ${ry + i}${i === 0 ? ', on time' : i === k ? ', latest' : ''}`;
+      rows += `<tr><th><span class="key" style="background:${col(i)}"></span>${label}</th>${list.map(([, , , m]) => `<td>${m.now.monthly === null ? '–' : pct(m.now.retireDist[i])}</td>`).join('')}</tr>`;
+    }
+    $('#retireTable').innerHTML = `<thead><tr><th></th><th>Monte Carlo</th><th>Block</th></tr></thead><tbody>${rows}</tbody>`;
+
+    // Spending breakdown.
+    const b = r.breakdown;
+    const lines = [
+      ['Essentials', b.essentials],
+      ['Extras', b.extras],
+      ['Fat FIRE headroom', b.fatHeadroom],
+      ['Home', b.housing],
+      ['Children', b.children],
+      ['Part-time income', b.barista],
+    ].filter(([, x]) => Math.abs(x) > 0.5);
+    if (last.mode === 'min') lines.splice(0, 2, ['Living costs', b.essentials + b.extras]);
+    if (lines.length === 1 && Math.abs(lines[0][1] - b.total) < 0.5) lines.length = 0;
+    const plT = mc.capitalNominal / mc.capital;
+    $('#spendList').innerHTML =
+      lines.map(([l, x]) => `<div><span>${l}</span><span>${fmtRes(x)}</span></div>`).join('') +
+      `<div class="tot"><span>A month, today's money</span><span>${fmtRes(b.total)}</span></div>` +
+      `<div class="later"><span>A month in ${ry} money</span><span>${fmtRes(roundTo(b.total * plT, 10))}</span></div>` +
+      `<div class="later"><span>A year in ${ry} money</span><span>${fmtRes(roundTo(b.total * plT * 12, 100))}</span></div>`;
+    $('#spendNote').textContent = `What the capital pays for, from January ${ry}. The ${ry} figures assume average inflation.${inp.housing.kind === 'mortgage' ? " The mortgage payment is fixed, so inflation shrinks it in today's money." : ''}`;
+
+    drawFan();
+    buildCapChips();
+    runStress(true);
+  }
+
+  // ---------- charts ----------
+  function niceStep(raw) {
+    const p = Math.pow(10, Math.floor(Math.log10(raw)));
+    const f = raw / p;
+    return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p;
+  }
+
+  function yAxis(W, pad, Y, yMax, step) {
+    let g = '';
+    for (let v = 0; v <= yMax + 1e-9; v += step) {
+      g += `<line x1="${pad.l}" x2="${W - pad.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--seam)" stroke-width="1"/>`;
+      g += `<text x="${pad.l - 8}" y="${Y(v) + 4}" text-anchor="end" font-size="11.5" fill="var(--fg-3)">${fmtCompact(v)}</text>`;
+    }
+    return g;
+  }
+
+  let fanState = null;
+  function drawFan() {
+    const host = $('#fan');
+    if (!last) return;
+    const which = radio('fanMethod');
+    const m = last.result.methods[which];
+    const inp = last.inp;
+    if (!m.fan) {
+      host.innerHTML = '';
+      $('#fanReadout').textContent = 'No chart: the plan is not reachable with a monthly amount.';
+      $('#fanTable').innerHTML = '';
+      return;
+    }
+    const f = m.fan;
+    const W = Math.max(280, host.clientWidth || 600);
+    const H = W < 520 ? 240 : 300;
+    const pad = { l: 56, r: 10, t: 14, b: 28 };
+    const x0 = f.ages[0];
+    const x1 = f.ages[f.ages.length - 1];
+    const maxMed = Math.max(...f.p50);
+    let top = Math.max(Math.max(...f.p90), m.capital * 1.05);
+    // Keep the years around retirement readable: very good late-life futures may run off the top.
+    const cap = Math.max(maxMed * 1.5, m.capital * 1.6);
+    const capped = top > cap;
+    if (capped) top = cap;
+    const step = niceStep(top / 4);
+    const yMax = Math.ceil(top / step) * step;
+    const X = (a) => pad.l + ((a - x0) / Math.max(1, x1 - x0)) * (W - pad.l - pad.r);
+    const Y = (v) => pad.t + (1 - Math.min(Math.max(v, 0), yMax) / yMax) * (H - pad.t - pad.b);
+    const band = (lo, hi) =>
+      'M' + f.ages.map((a, i) => `${X(a).toFixed(1)},${Y(hi[i]).toFixed(1)}`).join('L') +
+      'L' + f.ages.map((a, i) => `${X(a).toFixed(1)},${Y(lo[i]).toFixed(1)}`).reverse().join('L') + 'Z';
+    const line = (arr) => 'M' + f.ages.map((a, i) => `${X(a).toFixed(1)},${Y(arr[i]).toFixed(1)}`).join('L');
+    let xt = '';
+    for (let a = Math.ceil(x0 / 10) * 10; a <= x1; a += 10) xt += `<text x="${X(a)}" y="${H - 8}" text-anchor="middle" font-size="11.5" fill="var(--fg-3)">${a}</text>`;
+    const retireAge = inp.age + last.result.tTarget / 12;
+    const rx = X(retireAge);
+    const cy = Y(m.capital);
+    const capLabelY = cy - 6 < pad.t + 12 ? cy + 15 : cy - 6;
+    const retireRight = rx > W - 130;
+    const retIdx = Math.min(f.ages.length - 1, Math.max(0, Math.round(retireAge - x0)));
+    host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Fan chart of your money by age in today's money, ${which === 'block' ? 'block Monte Carlo' : 'Monte Carlo'}: median at retirement ${fmtCompact(f.p50[retIdx])}.">
+      ${yAxis(W, pad, Y, yMax, step)}
+      <path d="${band(f.p10, f.p90)}" fill="var(--band-1)"/>
+      <path d="${band(f.p25, f.p75)}" fill="var(--band-2)"/>
+      <line x1="${rx}" x2="${rx}" y1="${pad.t}" y2="${H - pad.b}" stroke="var(--fg-3)" stroke-width="1" stroke-dasharray="2 3"/>
+      <line x1="${pad.l}" x2="${W - pad.r}" y1="${cy}" y2="${cy}" stroke="var(--fg-2)" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <text class="ann" x="${W - pad.r - 4}" y="${capLabelY}" font-size="11.5" fill="var(--fg-2)" text-anchor="end">Capital you need</text>
+      <text class="ann" x="${retireRight ? rx - 5 : rx + 5}" y="${pad.t + 10}" font-size="11.5" fill="var(--fg-3)" text-anchor="${retireRight ? 'end' : 'start'}">Target retirement</text>
+      <path class="median" d="${line(f.p50)}" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round"/>
+      <line x1="${pad.l}" x2="${W - pad.r}" y1="${H - pad.b}" y2="${H - pad.b}" stroke="var(--edge)" stroke-width="1"/>
+      ${xt}
+      <line class="cross" x1="0" x2="0" y1="${pad.t}" y2="${H - pad.b}" stroke="var(--fg-2)" stroke-width="1" visibility="hidden"/>
+      <circle class="dot" r="4" fill="var(--acc)" stroke="var(--g1)" stroke-width="2" visibility="hidden"/>
+      <rect class="hit" x="${pad.l}" y="${pad.t}" width="${W - pad.l - pad.r}" height="${H - pad.t - pad.b}" fill="transparent"/>
+    </svg>`;
+    $('#capNote').hidden = !capped;
+    fanState = { f, X, Y, retireIdx: retIdx };
+    fanReadout(retIdx, false);
+    hover(host, W, pad, (sx) => {
+      const a = x0 + ((sx - pad.l) / (W - pad.l - pad.r)) * (x1 - x0);
+      return Math.min(f.ages.length - 1, Math.max(0, Math.round(a - x0)));
+    }, (i) => fanReadout(i, true), () => fanReadout(fanState.retireIdx, false));
+
+    let rowsT = '';
+    for (let i = 0; i < f.ages.length; i++) {
+      if (i % 5 !== 0 && i !== f.ages.length - 1) continue;
+      rowsT += `<tr><th>${f.ages[i]}</th><td>${fmtRes(roundK(f.p10[i]))}</td><td>${fmtRes(roundK(f.p50[i]))}</td><td>${fmtRes(roundK(f.p90[i]))}</td></tr>`;
+    }
+    $('#fanTable').innerHTML = `<thead><tr><th>Age</th><th>Worst 10%</th><th>Median</th><th>Best 10%</th></tr></thead><tbody>${rowsT}</tbody>`;
+  }
+
+  function hover(host, W, pad, toIndex, onMove, onLeave) {
+    const svg = $('svg', host);
+    const hit = $('.hit', host);
+    const move = (ev) => {
+      const box = svg.getBoundingClientRect();
+      onMove(toIndex(((ev.clientX - box.left) / box.width) * W));
+    };
+    hit.addEventListener('pointermove', move);
+    hit.addEventListener('pointerdown', move);
+    hit.addEventListener('pointerleave', onLeave);
+  }
+
+  function crossAt(host, x, y, show) {
+    const c = $('.cross', host);
+    const d = $('.dot', host);
+    if (!c) return;
+    c.setAttribute('x1', x);
+    c.setAttribute('x2', x);
+    d.setAttribute('cx', x);
+    d.setAttribute('cy', y);
+    c.setAttribute('visibility', show ? 'visible' : 'hidden');
+    d.setAttribute('visibility', show ? 'visible' : 'hidden');
+  }
+
+  function fanReadout(i, show) {
+    const s = fanState;
+    if (!s) return;
+    const { f, X, Y } = s;
+    crossAt($('#fan'), X(f.ages[i]), Y(f.p50[i]), show);
+    const lead = i === s.retireIdx && !show ? `At retirement, age ${f.ages[i]}` : `Age ${f.ages[i]}`;
+    $('#fanReadout').innerHTML = `${lead}: median <b>${fmtCompact(f.p50[i])}</b>. 8 in 10 futures between ${fmtCompact(f.p10[i])} and ${fmtCompact(f.p90[i])}.`;
+  }
+
+  // ---------- stress test ----------
+  function buildCapChips() {
+    const { result: r } = last;
+    const prev = radio('sCap');
+    const saferKey = r.methods.block.capital > r.methods.mc.capital ? 'block' : 'mc';
+    const opts = [
+      ['mc', 'Monte Carlo', r.methods.mc.capital],
+      ['block', 'Block Monte Carlo', r.methods.block.capital],
+    ];
+    const pick = prev || saferKey;
+    $('#sCaps').innerHTML = opts
+      .map(([k, n, c]) => `<label><input type="radio" name="sCap" value="${k}" ${k === pick ? 'checked' : ''}><span>${n} <span class="mono">${fmtRes(c)}</span></span></label>`)
+      .join('');
+  }
+
+  function stressStart() {
+    const y = parseInt($('#sYear').value, 10);
+    const m = parseInt($('#sMonth').value, 10);
+    return { y, m, h0: histIndex(y, m) };
+  }
+
+  function runStress(animate) {
+    if (!last) return;
+    const { result: r, inp } = last;
+    const s = stressStart();
+    const out = $('#stressOut');
+    const lastStart = HIST.months - 12;
+    if (s.h0 < 0 || s.h0 > lastStart) {
+      const a = histDate(0);
+      const b = histDate(lastStart);
+      out.textContent = `Pick a start between ${monthLabel(a.y, a.m)} and ${monthLabel(b.y, b.m)}, so there is at least a year of history to replay.`;
+      $('#stressMeta').textContent = '';
+      $('#stressChart').innerHTML = '';
+      $('#stressReadout').textContent = '';
+      $('#stressTable').innerHTML = '';
+      stressRes = null;
+      return;
+    }
+    const capital = r.methods[radio('sCap') || 'mc'].capital;
+    stressRes = { ...E.stressTest({ ...inp, historyCut: 0 }, NOW, HIST, s.h0, capital), capital, start: s };
+    const t = stressRes;
+    const end = histDate(s.h0 + t.months - 1);
+    const startTxt = `${MONTH_NAMES[s.m]} ${s.y}`;
+    if (t.ranOut >= 0) {
+      const d = histDate(s.h0 + t.ranOut);
+      out.innerHTML = `Retiring in ${startTxt} with <b>${fmtRes(capital)}</b>, the money runs out in <b>${MONTH_NAMES[d.m]} ${d.y}</b>, after ${duration(t.ranOut + 1)}.`;
+    } else {
+      let li = 0;
+      for (let k = 0; k <= t.months; k++) if (t.wealth[k] < t.wealth[li]) li = k;
+      const lowD = histDate(s.h0 + Math.min(li, t.months - 1));
+      const lowTxt = li === 0 ? 'It never fell below where it started.' : `The low point was <b>${fmtCompact(t.lowest)}</b> in ${MONTH_NAMES[lowD.m]} ${lowD.y}.`;
+      out.innerHTML = `Retiring in ${startTxt} with <b>${fmtRes(capital)}</b>, you would still have <b>${fmtCompact(t.endWealth)}</b> in ${MONTH_NAMES[end.m]} ${end.y}, in today's money. ${lowTxt}`;
+    }
+    const plan = t.months < HIST.months - s.h0 ? ' Your plan ends before the history does.' : ` History ends in ${monthLabel(end.y, end.m)}.`;
+    const note = STRESS_NOTES[`${s.y}-${String(s.m + 1).padStart(2, '0')}`];
+    $('#stressMeta').textContent = `${note ? note + ' ' : ''}${duration(t.months)} replayed.${plan} Prices rose ${pct(t.priceLevel - 1)}. ${t.sales.window} top-ups in sell months, ${t.sales.forced} one-month sales.`;
+    drawStress(animate && !reduced());
+  }
+
+  let stressState = null;
+  function drawStress(animate) {
+    const t = stressRes;
+    const host = $('#stressChart');
+    if (!t) return;
+    const n = t.months;
+    const lastK = t.ranOut >= 0 ? t.ranOut : n;
+    const W = Math.max(280, host.clientWidth || 600);
+    const H = W < 520 ? 220 : 260;
+    const pad = { l: 56, r: 10, t: 14, b: 28 };
+    let top = t.capital;
+    for (let k = 0; k <= lastK; k++) top = Math.max(top, t.wealth[k]);
+    const step = niceStep((top * 1.05) / 4);
+    const yMax = Math.ceil((top * 1.05) / step) * step;
+    const X = (k) => pad.l + (k / n) * (W - pad.l - pad.r);
+    const Y = (v) => pad.t + (1 - Math.min(Math.max(v, 0), yMax) / yMax) * (H - pad.t - pad.b);
+    const pts = [];
+    for (let k = 0; k <= lastK; k++) pts.push(`${X(k).toFixed(1)},${Y(t.wealth[k]).toFixed(1)}`);
+    if (t.ranOut >= 0) pts.push(`${X(t.ranOut + 1).toFixed(1)},${Y(0).toFixed(1)}`);
+    let dips = '';
+    for (let k = 0; k < Math.min(n, lastK + 1); ) {
+      if (!t.dips[k]) {
+        k++;
+        continue;
+      }
+      let e = k;
+      while (e < n && t.dips[e]) e++;
+      dips += `<rect x="${X(k).toFixed(1)}" y="${pad.t}" width="${Math.max(1, X(e) - X(k)).toFixed(1)}" height="${H - pad.t - pad.b}" fill="var(--dip)"/>`;
+      k = e;
+    }
+    const yearsSpan = n / 12;
+    const every = yearsSpan > 20 ? 5 : yearsSpan > 8 ? 2 : 1;
+    let xt = '';
+    for (let k = 0; k <= n; k++) {
+      const d = histDate(t.start.h0 + k);
+      if (d.m === 0 && d.y % every === 0) xt += `<text x="${X(k)}" y="${H - 8}" text-anchor="middle" font-size="11.5" fill="var(--fg-3)">${d.y}</text>`;
+    }
+    const cy = Y(t.capital);
+    let end = '';
+    if (t.ranOut >= 0) {
+      const ex = X(t.ranOut + 1);
+      end = `<circle cx="${ex}" cy="${Y(0)}" r="4" fill="var(--fg)" stroke="var(--g1)" stroke-width="2"/>`;
+    }
+    host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Your money month by month after retiring in ${monthLabel(t.start.y, t.start.m)}, in today's money.">
+      ${dips}
+      ${yAxis(W, pad, Y, yMax, step)}
+      <line x1="${pad.l}" x2="${W - pad.r}" y1="${cy}" y2="${cy}" stroke="var(--fg-2)" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <defs><clipPath id="sclip"><rect x="0" y="0" width="${animate ? pad.l : W}" height="${H}"/></clipPath></defs>
+      <g clip-path="url(#sclip)">
+        <path class="wline" d="M${pts.join('L')}" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round"/>
+        ${end}
+      </g>
+      <line x1="${pad.l}" x2="${W - pad.r}" y1="${H - pad.b}" y2="${H - pad.b}" stroke="var(--edge)" stroke-width="1"/>
+      ${xt}
+      <line class="cross" x1="0" x2="0" y1="${pad.t}" y2="${H - pad.b}" stroke="var(--fg-2)" stroke-width="1" visibility="hidden"/>
+      <circle class="dot" r="4" fill="var(--acc)" stroke="var(--g1)" stroke-width="2" visibility="hidden"/>
+      <rect class="hit" x="${pad.l}" y="${pad.t}" width="${W - pad.l - pad.r}" height="${H - pad.t - pad.b}" fill="transparent"/>
+    </svg>`;
+    endReplay();
+    stressState = { X, Y, lastK };
+    stressReadout(null);
+    hover(
+      host,
+      W,
+      pad,
+      (sx) => Math.min(lastK, Math.max(0, Math.round(((sx - pad.l) / (W - pad.l - pad.r)) * n))),
+      (k) => {
+        endReplay();
+        stressReadout(k);
+      },
+      () => stressReadout(null),
+    );
+
+    // The replay: history runs month by month at a steady pace, the path drawn up to a
+    // playhead whose month and value tick in the readout.
+    if (animate) {
+      const clip = $('#sclip rect', host);
+      const endK = t.ranOut >= 0 ? t.ranOut + 1 : n;
+      const D = Math.min(2400, 700 + n * 4);
+      const t0 = performance.now();
+      const frame = (now) => {
+        const p = Math.min(1, (now - t0) / D);
+        const kx = p * endK;
+        clip.setAttribute('width', X(kx) + 4);
+        stressReadout(Math.min(lastK, Math.floor(kx)));
+        if (p < 1) replay.raf = requestAnimationFrame(frame);
+        else endReplay();
+      };
+      replay = { raf: requestAnimationFrame(frame), clip, W };
+    }
+
+    let rows = '';
+    for (let k = 0; k <= n; k += 12) {
+      const d = histDate(t.start.h0 + k);
+      const v = k <= lastK ? fmtRes(roundK(t.wealth[k])) : fmtRes(0);
+      rows += `<tr><th>${monthLabel(d.y, d.m)}</th><td>${v}</td></tr>`;
+    }
+    $('#stressTable').innerHTML = `<thead><tr><th>Month</th><th>Your money, today's money</th></tr></thead><tbody>${rows}</tbody>`;
+  }
+
+  let replay = null;
+  function endReplay() {
+    if (!replay) return;
+    cancelAnimationFrame(replay.raf);
+    replay.clip.setAttribute('width', replay.W);
+    replay = null;
+    stressReadout(null);
+  }
+
+  function stressReadout(k) {
+    const t = stressRes;
+    const s = stressState;
+    if (!t || !s) return;
+    if (k === null) {
+      crossAt($('#stressChart'), 0, 0, false);
+      $('#stressReadout').textContent = 'Move along the chart to read any month.';
+      return;
+    }
+    crossAt($('#stressChart'), s.X(k), s.Y(t.wealth[k]), true);
+    const d = histDate(t.start.h0 + k);
+    $('#stressReadout').innerHTML = `${MONTH_NAMES[d.m]} ${d.y}: <b>${fmtCompact(t.wealth[k])}</b>${t.dips[k] ? ', stocks in a dip' : ''}.`;
+  }
+
+  // ---------- saved plans ----------
+  function snapshot() {
+    const vals = {};
+    const checks = {};
+    $$('#plan input, #plan select').forEach((el) => {
+      if (el.type === 'radio') {
+        if (el.checked) vals['r:' + el.name] = el.value;
+      } else if (el.type === 'checkbox') {
+        (checks[el.name] = checks[el.name] || []).push(el.checked ? el.value : null);
+      } else if (el.id && el.id !== 'mSpend' && !el.classList.contains('kid-year') && !el.classList.contains('kid-cost')) vals[el.id] = el.value;
+    });
+    return {
+      vals,
+      sell: (checks.sell || []).filter((x) => x !== null),
+      kinds: $$('#spendTable tbody tr').map((tr) => tr.dataset.kind),
+      kids: $$('.kid').map((row) => [$('.kid-year', row).value, $('.kid-cost', row).value]),
+      dirty: $$('input[data-scale]').filter((el) => el.dataset.dirty && el.id).map((el) => el.id),
+      mode: mode(),
+    };
+  }
+
+  function restore(s) {
+    $('#country').value = s.vals.country;
+    applyCountry();
+    Object.entries(s.vals).forEach(([k, v]) => {
+      if (k.startsWith('r:')) {
+        const el = $(`#plan input[name="${k.slice(2)}"][value="${v}"]`);
+        if (el) el.checked = true;
+      } else {
+        const el = $('#' + k);
+        if (el) el.value = v;
+      }
+    });
+    $(`input[name="mode"][value="${s.mode}"]`).checked = true;
+    $$('input[name="sell"]').forEach((el) => (el.checked = s.sell.includes(el.value)));
+    $$('#spendTable tbody tr').forEach((tr, i) => {
+      const kind = s.kinds[i] || tr.dataset.kind;
+      tr.dataset.kind = kind;
+      const tag = $('.tag', tr);
+      tag.dataset.kind = kind;
+      tag.textContent = kind === 'essential' ? 'Essential' : 'Extra';
+    });
+    $$('.kid').forEach((row) => row.remove());
+    s.kids.forEach(([y, m]) => ($('.kid-cost', addKid(y, m)).dataset.dirty = '1'));
+    $$('input[data-scale]').forEach((el) => {
+      if (el.id && s.dirty.includes(el.id)) el.dataset.dirty = '1';
+      else if (!el.classList.contains('kid-cost')) delete el.dataset.dirty;
+    });
+    updateCurrencyLabels();
+    updateLive();
+  }
+
+  const loadPlans = () => {
+    const p = store.get(PLANS_KEY, []);
+    return Array.isArray(p) ? p : [];
+  };
+  let compareIds = [];
+
+  function summarize(m) {
+    return {
+      capital: m.capital,
+      capitalNominal: m.capitalNominal,
+      withdrawalRate: m.withdrawalRate,
+      now: { monthly: m.now.monthly, failRate: m.now.failRate, retireDist: m.now.retireDist },
+      dip: { monthly: m.dip.monthly, dipHitRate: m.dip.dipHitRate },
+    };
+  }
+
+  function savePlan(name) {
+    if (!last || stale) return;
+    const plans = loadPlans();
+    const fig = figures(last.result.methods);
+    const plan = {
+      id: Date.now().toString(36),
+      name: name || `Plan ${plans.length + 1}`,
+      saved: new Date().toISOString().slice(0, 10),
+      mode: last.mode,
+      country: last.country,
+      currency: last.currency,
+      retireYear: last.result.retireDate.year,
+      inp: { ...last.inp, corr: undefined },
+      res: { mc: summarize(last.result.methods.mc), block: summarize(last.result.methods.block), ...fig },
+      snap: snapshot(),
+    };
+    plans.unshift(plan);
+    if (!store.set(PLANS_KEY, plans.slice(0, 30))) {
+      $('#saveNote').textContent = "Saving isn't available in this browser (private browsing or blocked storage).";
+      return;
+    }
+    $('#planName').value = '';
+    $('#saveNote').textContent = `Saved "${plan.name}". Tick two plans to compare them.`;
+    renderPlans();
+  }
+
+  function renderPlans() {
+    const plans = loadPlans();
+    const canSave = !!last && !stale && !running;
+    $('#saveBtn').disabled = !canSave;
+    $('#saveBtn').title = canSave ? '' : 'Calculate first, so the saved results match the inputs.';
+    compareIds = compareIds.filter((id) => plans.some((p) => p.id === id));
+    $('#planList').innerHTML = plans
+      .map((p) => {
+        const f = p.res;
+        return `<li data-id="${p.id}">
+          <label class="cmpbox"><input type="checkbox" class="cmp" ${compareIds.includes(p.id) ? 'checked' : ''} aria-label="Compare ${esc(p.name)}">Compare</label>
+          <div><span class="pname">${esc(p.name)}</span>
+            <span class="pmeta">${money(f.capital, p.currency)} + ${f.monthly === null ? 'not reachable' : money(f.monthly, p.currency) + '/mo'}, retire ${p.retireYear}, ${p.mode === 'min' ? 'Minimal' : 'Complete'}, saved ${p.saved}</span></div>
+          <div class="acts"><button type="button" class="btn open">Open</button><button type="button" class="btn del">Delete</button></div>
+        </li>`;
+      })
+      .join('');
+    if (!plans.length) $('#planList').innerHTML = '';
+    renderCompare(plans);
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  }
+
+  function describe(p) {
+    const i = p.inp;
+    const c = (x) => money(x, p.currency);
+    const alloc = ['usStocks', 'worldStocks', 'corpBonds', 'govBonds', 'metals'].map((k) => Math.round(i.alloc[k] * 100)).join('/');
+    return [
+      ['Inputs', p.mode === 'min' ? 'Minimal' : 'Complete'],
+      ['Country', p.country],
+      ['Currency', p.currency],
+      ['Age today', String(i.age)],
+      ['Retire in', String(i.retireYear)],
+      ['Plan until age', String(i.endAge)],
+      ['Accepted chance of running out', pct(i.failTarget, 1)],
+      ['Spending a month', c(i.spending.essentials + i.spending.extras)],
+      ['FIRE type', i.fireType],
+      ['Home', i.housing.kind === 'owned' ? 'paid off' : `${i.housing.kind}, ${c(i.housing.payment)}`],
+      ['Children', String(i.children.length)],
+      ['Already invested', c(i.existing)],
+      ['Split US/World/Corp/Gov/Metals', alloc],
+      ['Inflation', pct(i.inflation, 1)],
+      ['Tax on stock gains', pct(i.taxes.equity, 1)],
+      ['Cash buffer', `${i.cash.months} months at ${pct(i.cash.rate, 1)}`],
+      ['Extra years if short', String(i.maxDelayYears)],
+    ];
+  }
+
+  function renderCompare(plans) {
+    const host = $('#compare');
+    const [a, b] = compareIds.map((id) => plans.find((p) => p.id === id));
+    if (!a || !b) {
+      host.innerHTML = compareIds.length === 1 ? '<p class="note">Tick one more plan to compare.</p>' : '';
+      return;
+    }
+    const same = a.currency === b.currency;
+    const rows = [
+      ['Capital you need', (p) => p.res.capital],
+      ['Invest every month', (p) => p.res.monthly],
+      ['Monte Carlo capital', (p) => p.res.mc.capital],
+      ['Block Monte Carlo capital', (p) => p.res.block.capital],
+      ['Monte Carlo monthly', (p) => p.res.mc.now.monthly],
+      ['Block Monte Carlo monthly', (p) => p.res.block.now.monthly],
+    ];
+    const body = rows
+      .map(([l, g]) => {
+        const va = g(a);
+        const vb = g(b);
+        const max = same ? Math.max(va || 0, vb || 0) : 0;
+        const cell = (v, p, cls) =>
+          `<td>${v === null ? 'Not reachable' : money(v, p.currency)}${max > 0 && v !== null ? `<span class="cbar ${cls}" style="width:${Math.max(2, (v / max) * 100)}%"></span>` : ''}</td>`;
+        return `<tr><th>${l}</th>${cell(va, a, '')}${cell(vb, b, 'b')}</tr>`;
+      })
+      .join('');
+    const onTime = (p) => pct(p.res.mc.now.retireDist[0]);
+    const da = describe(a);
+    const db = describe(b);
+    const diffs = da.map(([l, v], i) => [l, v, db[i][1]]).filter(([, x, y]) => x !== y);
+    host.innerHTML = `<h3>${esc(a.name)} and ${esc(b.name)}</h3>
+      <div class="tw"><table class="tbl cmpt"><thead><tr><th></th><th>${esc(a.name)}</th><th>${esc(b.name)}</th></tr></thead>
+      <tbody>${body}<tr><th>Retire on time (Monte Carlo)</th><td>${onTime(a)}</td><td>${onTime(b)}</td></tr></tbody></table></div>
+      ${same ? '<p class="subnote" style="margin-top:6px">Bars in each row share one scale.</p>' : '<p class="subnote" style="margin-top:6px">Different currencies, so no bars.</p>'}
+      <h3 style="margin-top:16px">What differs</h3>
+      ${diffs.length ? `<div class="tw"><table class="tbl cmpt diff"><tbody>${diffs.map(([l, x, y]) => `<tr><th>${l}</th><td>${esc(x)}</td><td>${esc(y)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="note">The saved inputs are the same.</p>'}`;
+  }
+
+  // ---------- groups and mode ----------
+  function toggleGroup(grp, open) {
+    const want = open === undefined ? grp.hasAttribute('data-collapsed') : open;
+    if (want) grp.removeAttribute('data-collapsed');
+    else grp.setAttribute('data-collapsed', '');
+    $('.grp-h', grp).setAttribute('aria-expanded', String(want));
+  }
+
+  // ---------- wire up ----------
+  function init() {
+    buildSelects();
+    buildSpending();
+    buildAssets();
+    buildMonths();
+    buildStressControls();
+    $$('#plan input[type="text"]').forEach((el) => {
+      el.autocomplete = 'off';
+      el.spellcheck = false;
+    });
+    $('#country').value = 'IT';
+    applyCountry();
+    const savedMode = store.get(MODE_KEY, 'min');
+    $(`input[name="mode"][value="${savedMode === 'full' ? 'full' : 'min'}"]`).checked = true;
+    showHistoryStats();
+    updateLive();
+
+    const form = $('#plan');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      first = false;
+      const ok = await run();
+      if (ok && matchMedia('(max-width: 1039px)').matches) $('#results').scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
+    });
+    form.addEventListener('input', (e) => {
+      const el = e.target;
+      if (el.dataset && el.dataset.scale) el.dataset.dirty = '1';
+      if (el.id === 'mSpend') {
+        scaleSpending(val(el));
+        $('input[name="lifestyle"][value="custom"]').checked = true;
+      } else if (el.id && el.id.startsWith('sp-')) $('input[name="lifestyle"][value="custom"]').checked = true;
+      if (el.getAttribute('aria-invalid')) clearFieldErrors();
+      onChange();
+    });
+    form.addEventListener('change', (e) => {
+      const el = e.target;
+      if (el.id === 'country') applyCountry();
+      else if (el.id === 'currency') {
+        updateCurrencyLabels();
+        refreshMoneyDefaults();
+      } else if (el.name === 'lifestyle' || el.name === 'adults') fillLifestyle();
+      else if (el.name === 'home') {
+        const p = $('#homePayment');
+        if (!p.dataset.dirty) p.value = fmtInput(moneyDefault(HOME_BASE[radio('home')] || 0, 'cost'));
+      } else if (el.id === 'mSpend') el.value = fmtInput(spendingTotals().essentials + spendingTotals().extras);
+      else if (el.dataset && el.dataset.fmt === 'money' && Number.isFinite(val(el))) el.value = fmtInput(val(el));
+      onChange();
+    });
+    $$('input[name="mode"]').forEach((el) =>
+      el.addEventListener('change', () => {
+        store.set(MODE_KEY, mode());
+        clearFieldErrors();
+        onChange();
+      }),
+    );
+    $$('.grp-h').forEach((h) => h.addEventListener('click', () => toggleGroup(h.closest('.grp'))));
+    $('#spendTable').addEventListener('click', (e) => {
+      const t = e.target.closest('.tag');
+      if (!t) return;
+      const tr = t.closest('tr');
+      const next = tr.dataset.kind === 'essential' ? 'extra' : 'essential';
+      tr.dataset.kind = next;
+      t.dataset.kind = next;
+      t.textContent = next === 'essential' ? 'Essential' : 'Extra';
+      t.setAttribute('aria-label', `${$('label', tr).textContent}: ${next}, tap to switch`);
+      onChange();
+    });
+    $('#addKid').addEventListener('click', () => {
+      addKid(NOW.year, moneyDefault(CHILD_BASE, 'cost'));
+      onChange();
+    });
+    $$('input[name="fanMethod"]').forEach((el) => el.addEventListener('change', drawFan));
+
+    // Stress test controls.
+    $('#sPresets').addEventListener('change', () => {
+      const [y, m] = radio('sPreset').split('-').map(Number);
+      $('#sYear').value = String(y);
+      $('#sMonth').value = String(m - 1);
+      runStress(true);
+    });
+    const onSel = () => {
+      const key = `${$('#sYear').value}-${String(parseInt($('#sMonth').value, 10) + 1).padStart(2, '0')}`;
+      $$('input[name="sPreset"]').forEach((el) => (el.checked = el.value === key));
+      runStress(true);
+    };
+    $('#sYear').addEventListener('change', onSel);
+    $('#sMonth').addEventListener('change', onSel);
+    $('#sCaps').addEventListener('change', () => runStress(true));
+
+    // Saved plans.
+    $('#saveForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      savePlan($('#planName').value.trim());
+    });
+    $('#planList').addEventListener('click', (e) => {
+      const li = e.target.closest('li');
+      if (!li) return;
+      const id = li.dataset.id;
+      if (e.target.closest('.open')) {
+        const p = loadPlans().find((x) => x.id === id);
+        if (!p) return;
+        restore(p.snap);
+        first = false;
+        $('#saveNote').textContent = `Opened "${p.name}".`;
+        run();
+        $('#plan').scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
+      } else if (e.target.closest('.del')) {
+        const btn = e.target.closest('.del');
+        if (!btn.hasAttribute('data-armed')) {
+          btn.setAttribute('data-armed', '');
+          btn.textContent = 'Confirm delete';
+          return;
+        }
+        store.set(PLANS_KEY, loadPlans().filter((x) => x.id !== id));
+        compareIds = compareIds.filter((x) => x !== id);
+        $('#saveNote').textContent = 'Plan deleted.';
+        renderPlans();
+      }
+    });
+    $('#planList').addEventListener('focusout', (e) => {
+      const btn = e.target.closest && e.target.closest('.del[data-armed]');
+      if (btn) {
+        btn.removeAttribute('data-armed');
+        btn.textContent = 'Delete';
+      }
+    });
+    $('#planList').addEventListener('change', (e) => {
+      if (!e.target.classList.contains('cmp')) return;
+      const id = e.target.closest('li').dataset.id;
+      compareIds = compareIds.filter((x) => x !== id);
+      if (e.target.checked) compareIds.push(id);
+      if (compareIds.length > 2) compareIds.shift();
+      renderPlans();
+      const box = $(`#planList li[data-id="${id}"] .cmp`);
+      if (box) box.focus();
+    });
+
+    let rt;
+    window.addEventListener('resize', () => {
+      clearTimeout(rt);
+      rt = setTimeout(() => {
+        drawFan();
+        drawStress(false);
+      }, 120);
+    });
+    // The status bar is fixed; the page keeps room for it at whatever height it wraps to.
+    const sb = $('.statusbar');
+    const fit = () => document.documentElement.style.setProperty('--sb', sb.offsetHeight + 'px');
+    if (window.ResizeObserver) new ResizeObserver(fit).observe(sb);
+    fit();
+    renderPlans();
+    run();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
