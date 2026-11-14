@@ -1,0 +1,7 @@
+# Note: on a GitHub Pages project site this file is served at /fireplanner/robots.txt,
+# which crawlers do not read (robots.txt only counts at the host root). Submit the
+# sitemap in Google Search Console instead. Kept here for a future custom domain.
+User-agent: *
+Allow: /
+
+Sitemap: https://trossini02.github.io/fireplanner/sitemap.xml

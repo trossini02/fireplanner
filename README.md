@@ -80,6 +80,8 @@ python3 -I data/build_history.py --raw data/raw --out history.js
 | `history.js` | Monthly historical returns (generated) |
 | `data/build_history.py` | Reproducible download and build of `history.js` |
 | `tests/engine.test.mjs` | Engine tests |
+| `og.png` | Social preview card (1200x630), rendered by `data/og_card.cjs` with Playwright from the site's own colours and fonts |
+| `sitemap.xml`, `robots.txt` | Search engine files. On GitHub Pages `robots.txt` is not read at `/fireplanner/`, so submit the sitemap in Google Search Console |
 | `SPEC.md`, `PRODUCT.md`, `DESIGN.md` | Specification, product brief and design system |
 
 ## Limits

@@ -3,12 +3,45 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>PAC FIRE Planner</title>
-<meta name="description" content="How much you need to retire early, and how much to invest every month to get there. Each answer is tested on 2,000 futures, twice: random markets and real market history. Runs in your browser.">
+<title>Monte Carlo Early Retirement Calculator | PAC FIRE Planner</title>
+<meta name="description" content="Free FIRE calculator: how much capital you need to retire early and what to invest each month, tested with Monte Carlo and real market history since 1990.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="author" content="Tommaso Rossini">
+<link rel="canonical" href="https://trossini02.github.io/fireplanner/">
 <meta name="theme-color" content="#0f1113">
 <meta property="og:type" content="website">
-<meta property="og:title" content="PAC FIRE Planner">
+<meta property="og:site_name" content="PAC FIRE Planner">
+<meta property="og:url" content="https://trossini02.github.io/fireplanner/">
+<meta property="og:title" content="PAC FIRE Planner: early retirement calculator with Monte Carlo">
 <meta property="og:description" content="How much you need to retire early, and how much to invest every month to get there, tested on random markets and real market history.">
+<meta property="og:image" content="https://trossini02.github.io/fireplanner/og.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="PAC FIRE Planner: how much you need to retire early, and how much to invest every month to get there.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PAC FIRE Planner: early retirement calculator with Monte Carlo">
+<meta name="twitter:description" content="How much you need to retire early, and how much to invest every month to get there, tested on random markets and real market history.">
+<meta name="twitter:image" content="https://trossini02.github.io/fireplanner/og.png">
+<meta name="twitter:image:alt" content="PAC FIRE Planner: how much you need to retire early, and how much to invest every month to get there.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "PAC FIRE Planner",
+  "url": "https://trossini02.github.io/fireplanner/",
+  "description": "Free FIRE and early retirement calculator. It sizes the capital you need to retire early and the fixed monthly investment (PAC, piano di accumulo) to get there, each computed twice: a parametric Monte Carlo and a block Monte Carlo that resamples real monthly market history from July 1990 to September 2025. Runs entirely in your browser.",
+  "applicationCategory": "FinanceApplication",
+  "operatingSystem": "Any (browser)",
+  "browserRequirements": "Requires JavaScript.",
+  "inLanguage": "en",
+  "isAccessibleForFree": true,
+  "image": "https://trossini02.github.io/fireplanner/og.png",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+  "author": { "@type": "Person", "name": "Tommaso Rossini", "url": "https://www.trossini.com" },
+  "license": "https://opensource.org/licenses/MIT"
+}
+</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2316191c'/%3E%3Cpath d='M7 23l6-6 4 3 8-9' fill='none' stroke='%238ab4f8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -85,6 +118,7 @@ h1, h2, h3 { text-wrap: balance; }
 }
 .top h1 { margin: 0; font: 600 19px/1.2 var(--font); letter-spacing: -0.01em; }
 .top p { margin: 3px 0 0; color: var(--fg-2); font-size: 13.5px; max-width: 46rem; }
+.nojs { margin: 0; padding: 16px; background: var(--g1); border-top: 1px solid var(--seam); color: var(--fg); max-width: none; }
 
 /* segmented controls: real radios, styled */
 .seg { display: inline-flex; flex-wrap: wrap; gap: 6px; }
@@ -395,6 +429,7 @@ h1, h2, h3 { text-wrap: balance; }
       <label><input type="radio" name="mode" value="full"><span>Complete</span></label>
     </div>
   </header>
+  <noscript><p class="nojs">PAC FIRE Planner is a free early retirement (FIRE) calculator. It works out the capital you need to retire early and the fixed monthly investment (PAC, piano di accumulo) to get there, and tests each answer on 2,000 futures with Monte Carlo and with block Monte Carlo on real monthly market history since 1990. It runs entirely in your browser and needs JavaScript: please turn JavaScript on to use it.</p></noscript>
 
   <main class="desk" id="desk">
     <form class="plan" id="plan" data-mode="min" novalidate aria-label="Your plan">
