@@ -135,7 +135,7 @@ test('flat world: the flexible date keeps the PAC going up to 3 more years', asy
 test('flat world: waiting for a dip that never comes invests the cash at retirement', async () => {
   const r = await E.analyze(flatInput(), NOW, null);
   assert.equal(r.methods.mc.dip.monthly, 9400);
-  assert.equal(r.methods.mc.dip.dipHitRate, 0);
+  assert.equal(r.methods.mc.dip.fallShare, 0);
 });
 
 test('existing investments reduce the monthly PAC, and enough of them make it zero', async () => {
@@ -391,4 +391,118 @@ test('minimal settings: a history haircut lowers every replayed return', () => {
   const a = E.generateBootstrap(inp, tl, hist);
   const b = E.generateBootstrap({ ...inp, historyCut: 0.005 }, tl, hist);
   for (let i = 0; i < 30; i++) assert.ok(Math.abs((1 + b.port[i]) / (1 + a.port[i]) - Math.pow(0.995, 1 / 12)) < 1e-6);
+});
+
+test('flat world: every timing and buying rule gives the same closed-form answers', async () => {
+  const split = { usStocks: 0.5, worldStocks: 0.3, corpBonds: 0, govBonds: 0.2, metals: 0 };
+  for (const alloc of [undefined, split])
+    for (const buyMode of ['split', 'rebal'])
+      for (const timing of ['now', 'dip', 'smart']) {
+        const r = await E.analyze(flatInput({ buyMode, timing, ...(alloc ? { alloc } : {}) }), NOW, null);
+        const m = r.methods.mc;
+        assert.equal(m.capital, 140000);
+        assert.equal(m.plan.monthly, 9400, `${buyMode} ${timing}`);
+        assert.equal(m.plan, m[timing]);
+      }
+});
+
+test('yearly raise: the first-year amount grows by the chosen share each plan year', async () => {
+  // 12 months of M, then 2 months of 1.1 × M must reach 130,804 → M = 9,211.5 → 9,300.
+  const r = await E.analyze(flatInput({ contribGrowth: 0.1 }), NOW, null);
+  assert.equal(r.methods.mc.now.monthly, 9300);
+});
+
+test('smart pair: 150% / 50% moved so the average is 100%', () => {
+  for (const red of [0, 0.2, 0.35, 0.5, 0.6, 0.9]) {
+    const s = E.smartPair(red);
+    assert.ok(Math.abs(red * s.up + (1 - red) * s.down - 1) < 1e-12, `red ${red}`);
+    assert.ok(s.up >= 1 && s.up <= 1.5 && s.down >= 0.5 && s.down <= 1);
+  }
+  assert.deepEqual([E.smartPair(0.5).up, E.smartPair(0.5).down], [1.5, 0.5]);
+});
+
+test('buying without selling: by the split, or into what has fallen behind it', () => {
+  const w = [0.5, 0.5, 0, 0, 0];
+  const h = [40, 50, 0, 0, 0];
+  E.buy(h, w, 100, 90, true);
+  assert.deepEqual(h, [95, 95, 0, 0, 0]); // enough to close the gap: exactly on the split
+  const small = [40, 50, 0, 0, 0];
+  E.buy(small, w, 5, 90, true);
+  assert.deepEqual(small, [45, 50, 0, 0, 0]); // all of it to the asset behind
+  const plain = [40, 50, 0, 0, 0];
+  E.buy(plain, w, 100, 90, false);
+  assert.deepEqual(plain, [90, 100, 0, 0, 0]);
+});
+
+// One hand-built scenario: stocks fall 20% in month 1, rise 10% in month 2 (US only), else flat.
+function handPath(inp) {
+  const tl = E.buildTimeline(inp, NOW);
+  const T = tl.T;
+  const Ta = tl.tTarget;
+  const ra = new Float32Array(Ta * 5);
+  const mk = new Float32Array(Ta);
+  ra[1 * 5] = -0.2;
+  mk[1] = -0.2;
+  ra[2 * 5] = 0.1;
+  mk[2] = 0.1;
+  const S = { port: new Float32Array(T), dip: new Uint8Array(T), pl: new Float64Array(T + 1).fill(1), N: 1, T, Ta, ra, mk };
+  return { tl, S };
+}
+const yearOne = (inp, mode, smart) => {
+  const { tl, S } = handPath(inp);
+  const rec = new Float32Array(Math.floor((tl.T - 1) / 12) + 1);
+  E.runPlan(S, E.makeContext(inp, tl, smart), 100, mode, 1e9, rec);
+  return rec[1]; // money after 12 months
+};
+
+test('timing rules only react to the month just ended', () => {
+  const inp = flatInput({ buyDrop: 0.1 });
+  // Every month: 100 falls to 80; (80 + 100) × 1.1 = 198; + 100 × 10 more months = 1,198.
+  assert.ok(Math.abs(yearOne(inp, 'now') - 1198) < 1e-3);
+  // After a fall: 200 saved by month 1 goes in after the 20% fall, then rises 10%; the rest waits.
+  assert.ok(Math.abs(yearOne(inp, 'dip') - (220 + 1000)) < 1e-3);
+  // Smart 150/50: 50 in, falls to 40; 150 after the red month (all the cash); 50 a month after.
+  // Month 2: (40 + 150) × 1.1 = 209, + 50 × 10 green months invested, 500 still in cash.
+  assert.ok(Math.abs(yearOne(inp, 'smart', { up: 1.5, down: 0.5 }) - (209 + 500 + 500)) < 1e-3);
+});
+
+test('rebalancing with new money ends with more of what fell', () => {
+  const inp = flatInput({ alloc: { usStocks: 0.5, worldStocks: 0.5, corpBonds: 0, govBonds: 0, metals: 0 } });
+  // Split: [50, 50] → [40, 50] + [50, 50]; US rises 10% (+9) → 199, + 1,000 = 1,199. Rebalancing
+  // puts 55 of month 1's money into US instead of 50, so it gains 0.5 more from the rise.
+  const split = yearOne({ ...inp, buyMode: 'split' }, 'now');
+  const rebal = yearOne({ ...inp, buyMode: 'rebal' }, 'now');
+  assert.ok(Math.abs(split - 1199) < 1e-3, `split ${split}`);
+  assert.ok(Math.abs(rebal - 1199.5) < 1e-3, `rebal ${rebal}`);
+});
+
+test('one-number portfolio: history keeps its months, moved to the chosen growth and volatility', () => {
+  require('../history.js');
+  const H = globalThis.PAC_HISTORY;
+  const inp = flatInput({ single: { growth: 0.05, vol: 0.12 }, alloc: { usStocks: 0.3, worldStocks: 0.4, corpBonds: 0.1, govBonds: 0.15, metals: 0.05 } });
+  const [one, hist] = E.asSingle(inp, H);
+  assert.equal(one.alloc.usStocks, 1);
+  assert.equal(one.returns.usStocks, 0.05);
+  const x = hist.real.usStocks.map((v) => Math.log(1 + v));
+  const m = x.reduce((s, v) => s + v, 0) / x.length;
+  const sd = Math.sqrt(x.reduce((s, v) => s + (v - m) ** 2, 0) / x.length);
+  assert.ok(Math.abs(Math.exp(m * 12) - 1.05) < 1e-9);
+  assert.ok(Math.abs(sd * Math.sqrt(12) - 0.12) < 1e-9);
+  // The worst month of the mix stays the worst month.
+  const mix = H.real.usStocks.map((_, h) => 0.3 * H.real.usStocks[h] + 0.4 * H.real.worldStocks[h] + 0.1 * H.real.corpBonds[h] + 0.15 * H.real.govBonds[h] + 0.05 * H.real.metals[h]);
+  assert.equal(x.indexOf(Math.min(...x)), mix.indexOf(Math.min(...mix)));
+  // In a flat world it changes nothing.
+  return E.analyze(flatInput({ single: { growth: 0, vol: 0 } }), NOW, null).then((r) => assert.equal(r.methods.mc.now.monthly, 9400));
+});
+
+test('after a fall: savings go in anyway once the longest wait is reached', () => {
+  const inp = flatInput({ buyDrop: 0.1, dip: { drop: 0.1, maxWaitMonths: 3 } });
+  const { tl, S } = handPath(inp);
+  S.ra[5 * 5] = 0.5; // US +50% in month 5
+  S.mk[5] = 0.5;
+  const rec = new Float32Array(Math.floor((tl.T - 1) / 12) + 1);
+  E.runPlan(S, E.makeContext(inp, tl), 100, 'dip', 1e9, rec);
+  // 200 in after month 1's fall → 220 after month 2. Months 2–4 wait, 300 in after month 4:
+  // 520 × 1.5 = 780. 300 in after months 7 and 10: 1,380, plus 100 saved in month 11.
+  assert.ok(Math.abs(rec[1] - 1480) < 1e-3, `${rec[1]}`);
 });

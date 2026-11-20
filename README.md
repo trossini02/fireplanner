@@ -23,7 +23,12 @@ browser's own storage.
 
 - A flexible retirement date: if markets fall short, you keep investing for up to 3 more years.
 - A cash buffer in retirement, topped up only in chosen sell months and never during a dip.
-- Starting now versus waiting for a dip before investing new money.
+- When the money goes in: every month, after a month in which stocks fell by a chosen share
+  (saving in cash meanwhile), or 150% after red months and less after green ones, averaging 100%.
+  All three are calculated side by side.
+- Nothing sold while saving: new money buys by your split, or goes to what has fallen behind it.
+- A monthly amount that rises by a chosen percentage every year.
+- Describe your investments by asset split and correlations, or by one average growth and volatility.
 - Taxes on gains by country, plus yearly wealth or stamp taxes.
 - Inflation that varies over time, with occasional spikes.
 - Lean, Regular, Fat and Barista FIRE, a mortgage or rent, and children.
@@ -31,8 +36,9 @@ browser's own storage.
   October 2007) and watch the money month by month.
 - **Saved plans:** save plans in your browser and compare any two side by side.
 
-**Minimal** mode asks for six inputs and fixes the rest at slightly cautious defaults.
-**Complete** mode lets you change everything.
+**Guided setup** asks the questions one at a time and then shows the result (it opens on a first
+visit). **Minimal** mode shows the same few inputs on one panel and fixes the rest at slightly
+cautious defaults. **Complete** mode lets you change everything.
 
 ## Run it locally
 

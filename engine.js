@@ -153,8 +153,16 @@
     return (a.usStocks + a.worldStocks) * tx.equity + a.govBonds * tx.gov + (a.corpBonds + a.metals) * tx.other;
   }
 
-  function makeContext(inp, tl) {
+  function makeContext(inp, tl, smart) {
+    const g = 1 + (inp.contribGrowth || 0);
     return {
+      w: ASSETS.map((a) => inp.alloc[a]),
+      rebal: inp.buyMode === 'rebal',
+      grow: Float64Array.from({ length: Math.ceil(tl.T / 12) + 1 }, (_, y) => Math.pow(g, y)),
+      buyDrop: inp.buyDrop || 0.05,
+      timing: inp.timing || 'now',
+      up: smart ? smart.up : 1.5,
+      down: smart ? smart.down : 0.5,
       T: tl.T,
       tTarget: tl.tTarget,
       maxDelay: tl.maxDelay,
@@ -182,12 +190,86 @@
     return s > 0 ? [inp.alloc.usStocks / s, inp.alloc.worldStocks / s] : null;
   }
 
+  // The longest possible saving phase: up to January of the last allowed retirement year.
+  const saveMonths = (tl) => Math.min(tl.T, tl.tTarget + 12 * tl.maxDelay);
+
+  /* One-number portfolio (`inp.single` = {growth, vol}): a single asset with that growth and
+   * volatility, taxed as stocks. History keeps the months of `inp.alloc` (the standard split)
+   * with their log returns moved and scaled to that growth and volatility, so crashes come at
+   * the same times, sized to the visitor's numbers. Returns [inp, history] for the engine. */
+  function asSingle(inp, history) {
+    if (!inp.single) return [inp, history];
+    const { growth, vol } = inp.single;
+    const one = (x) => ({ usStocks: x, worldStocks: 0, corpBonds: 0, govBonds: 0, metals: 0 });
+    const out = { ...inp, alloc: one(1), returns: one(growth), vols: one(vol), single: null };
+    if (!history) return [out, history];
+    checkAlloc(inp);
+    const H = history.real.usStocks.length;
+    const x = Float64Array.from({ length: H }, (_, h) => Math.log(1 + ASSETS.reduce((s, a) => s + inp.alloc[a] * history.real[a][h], 0)));
+    let m = 0;
+    let s2 = 0;
+    for (const v of x) m += v / H;
+    for (const v of x) s2 += (v - m) * (v - m);
+    const sd = Math.sqrt(s2 / H);
+    const k = sd > 0 ? vol / Math.sqrt(12) / sd : 0;
+    const mu = Math.log(1 + growth) / 12;
+    const zeros = new Array(H).fill(0);
+    const real = { usStocks: Array.from(x, (v) => Math.exp(mu + (v - m) * k) - 1), worldStocks: zeros, corpBonds: zeros, govBonds: zeros, metals: zeros };
+    return [out, { ...history, real }];
+  }
+
+  /* Smart timing invests `up` × the month's amount after a month when stocks fell and `down` ×
+   * after one when they rose: 150% and 50%, with one side moved so the two average 100% when
+   * stocks fall in a share `red` of months. */
+  function smartPair(red) {
+    if (red <= 0.5) return { up: 1.5, down: (1 - 1.5 * red) / (1 - red), red };
+    return { up: (1 - 0.5 * (1 - red)) / red, down: 0.5, red };
+  }
+
+  // Share of months the stock index fell (nominal): over history when there is one, else over
+  // the saving months of the simulated paths.
+  function redShare(inp, history, S) {
+    let red = 0;
+    if (!history) {
+      for (let i = 0; i < S.mk.length; i++) if (S.mk[i] < 0) red++;
+      return S.mk.length ? red / S.mk.length : 0;
+    }
+    const { R, I, H } = historyTables(inp, history);
+    const we = equityWeights(inp);
+    const w = ASSETS.map((a) => inp.alloc[a]);
+    for (let h = 0; h < H; h++) {
+      let re = 0;
+      if (we) re = we[0] * R[0][h] + we[1] * R[1][h];
+      else for (let k = 0; k < 5; k++) re += w[k] * R[k][h];
+      if ((1 + re) * (1 + I[h]) < 1) red++;
+    }
+    return red / H;
+  }
+
+  /* Invest A into holdings h (total P) without selling: by the split w, or (`rebal`) into the
+   * assets furthest below their share of the new total, in proportion to the gap. The gaps
+   * always add up to at least A, so a large enough A lands exactly on the split. */
+  function buy(h, w, A, P, rebal) {
+    if (!rebal) {
+      for (let i = 0; i < 5; i++) h[i] += w[i] * A;
+      return;
+    }
+    const goal = P + A;
+    let D = 0;
+    for (let i = 0; i < 5; i++) D += Math.max(0, w[i] * goal - h[i]);
+    for (let i = 0; i < 5; i++) h[i] += (A * Math.max(0, w[i] * goal - h[i])) / D;
+  }
+
   /* Shared tail of every generator: real returns and the month's inflation → nominal portfolio
-   * return, the scenario's price level, and dip flags on the nominal stock index. */
-  function makeSink(inp, T, N) {
+   * return, the scenario's price level, and dip flags on the nominal stock index. For the first
+   * Ta months (the longest possible saving phase) it also keeps each asset's nominal return
+   * and the stock index's, which the saving phase needs. */
+  function makeSink(inp, T, N, Ta) {
     const port = new Float32Array(N * T);
     const dip = new Uint8Array(N * T);
     const pl = new Float64Array(N * (T + 1));
+    const ra = new Float32Array(N * Ta * 5);
+    const mk = new Float32Array(N * Ta);
     const w = ASSETS.map((a) => inp.alloc[a]);
     const we = equityWeights(inp);
     const floor = 1 - inp.dip.drop;
@@ -195,7 +277,7 @@
     let peak = 1;
     let level = 1;
     return {
-      paths: { port, dip, pl, N, T },
+      paths: { port, dip, pl, N, T, Ta, ra, mk },
       startPath(p) {
         idx = 1;
         peak = 1;
@@ -212,6 +294,11 @@
         idx *= (1 + re) * (1 + pi);
         if (idx > peak) peak = idx;
         dip[p * T + t] = idx < floor * peak ? 1 : 0;
+        if (t < Ta) {
+          const a = p * Ta + t;
+          mk[a] = (1 + re) * (1 + pi) - 1;
+          for (let k = 0; k < 5; k++) ra[a * 5 + k] = (1 + r[k]) * (1 + pi) - 1;
+        }
       },
     };
   }
@@ -248,7 +335,7 @@
     const sd = ASSETS.map((a) => inp.vols[a] / Math.sqrt(12));
     const gauss = gaussian(mulberry32(inp.seed));
     const infl = inflationStream(inp);
-    const sink = makeSink(inp, T, N);
+    const sink = makeSink(inp, T, N, saveMonths(tl));
     const eps = new Float64Array(5);
     const r = new Float64Array(5);
     for (let p = 0; p < N; p++) {
@@ -289,7 +376,7 @@
     const { R, I, H } = historyTables(inp, history);
     const B = Math.max(1, Math.round(inp.blockYears * 12));
     const rand = mulberry32(inp.seed + 1);
-    const sink = makeSink(inp, T, N);
+    const sink = makeSink(inp, T, N, saveMonths(tl));
     const r = new Float64Array(5);
     for (let p = 0; p < N; p++) {
       sink.startPath(p);
@@ -362,23 +449,32 @@
     return fails / S.N;
   }
 
-  /* Whole plan: existing money + monthly PAC (now, or parked in cash until a dip), flexible
-   * retirement date (postpone a year while below the capital needed in that scenario's money,
-   * up to maxDelay), then retirement. */
+  /* Whole plan: existing money + a monthly saving of M (× the yearly raise), flexible retirement
+   * date (postpone a year while below the capital needed in that scenario's money, up to
+   * maxDelay), then retirement. While saving, each asset is held on its own and nothing is
+   * sold; new money buys by the split or, with `rebal`, what has fallen behind it. Timing:
+   * 'now' invests each month's saving at the end of that month. 'dip' keeps savings in cash
+   * until a month in which stocks fell by buyDrop or more, or until maxWait months have passed.
+   * 'smart' invests up × the month's saving after a month stocks fell and down × after one they
+   * rose, from the savings in cash. Every rule only looks at the month just ended. At
+   * retirement, holdings and cash join one portfolio, rebalanced monthly from then on. */
   function runPlan(S, c, M, mode, capital, rec) {
-    const { port, dip, pl, N, T } = S;
+    const { pl, N, T, Ta, ra, mk } = S;
+    const w = c.w;
     const nY = Math.floor((T - 1) / 12) + 1;
     const retire = new Array(c.maxDelay + 1).fill(0);
+    const h = new Float64Array(5);
     let fails = 0;
-    let dipHits = 0;
+    let atFall = 0;
+    let saved = 0;
     for (let p = 0; p < N; p++) {
-      const off = p * T;
       const po = p * (T + 1);
       const recOff = p * nY;
+      for (let i = 0; i < 5; i++) h[i] = c.existing * w[i];
       let P = c.existing;
       let B = P;
       let W = 0;
-      let invested = mode !== 'dip';
+      let wait = 0;
       let k = 0;
       let check = c.tTarget;
       let t = 0;
@@ -389,24 +485,30 @@
           check += 12;
         }
         if (rec && t % 12 === 0) rec[recOff + t / 12] = (P + W) / pl[po + t];
-        P *= 1 + port[off + t];
+        const a = p * Ta + t;
+        P = 0;
+        for (let i = 0; i < 5; i++) P += h[i] *= 1 + ra[a * 5 + i];
         if (c.jan[t] && P > 0) {
+          for (let i = 0; i < 5; i++) h[i] *= 1 - c.wealthTax;
           P *= 1 - c.wealthTax;
           B *= 1 - c.wealthTax;
         }
-        if (invested) {
-          P += M;
-          B += M;
-        } else {
-          W = W * c.cashG + M;
-          const hit = dip[off + t] === 1;
-          if (hit || t + 1 >= c.maxWait) {
-            if (hit) dipHits++;
-            P += W;
-            B += W;
-            W = 0;
-            invested = true;
-          }
+        const m = M * c.grow[(t / 12) | 0];
+        saved += m;
+        W = W * c.cashG + m;
+        let A = W;
+        if (mode === 'dip') {
+          if (mk[a] <= -c.buyDrop) {
+            wait = 0;
+            atFall += W;
+          } else if (++wait < c.maxWait) A = 0;
+          else wait = 0;
+        } else if (mode === 'smart') A = Math.min(W, (mk[a] < 0 ? c.up : c.down) * m);
+        if (A > 0) {
+          buy(h, w, A, P, c.rebal);
+          P += A;
+          B += A;
+          W -= A;
         }
         t++;
       }
@@ -418,7 +520,7 @@
     return {
       failRate: fails / N,
       retireDist: retire.map((n) => n / N),
-      dipHitRate: mode === 'dip' ? dipHits / N : null,
+      fallShare: mode === 'dip' && saved > 0 ? atFall / saved : null,
     };
   }
 
@@ -449,8 +551,8 @@
 
   const tick = () => new Promise((r) => setTimeout(r, 0));
 
-  async function analyzeMethod(inp, tl, paths, onStep) {
-    const c = makeContext(inp, tl);
+  async function analyzeMethod(inp, tl, paths, smart, onStep) {
+    const c = makeContext(inp, tl, smart);
     const U = inp.units;
     const target = inp.failTarget;
     const step = async (x) => {
@@ -481,14 +583,14 @@
       if (monthly === null) return { monthly: null };
       return { monthly, ...runPlan(paths, c, monthly, mode, capital, null) };
     };
-    const now = await plan('now');
-    const dip = await plan('dip');
+    const plans = { now: await plan('now'), dip: await plan('dip'), smart: await plan('smart') };
+    const chosen = plans[c.timing];
 
     let fan = null;
-    if (now.monthly !== null) {
+    if (chosen.monthly !== null) {
       const nY = Math.floor((tl.T - 1) / 12) + 1;
       const rec = new Float32Array(paths.N * nY);
-      runPlan(paths, c, now.monthly, 'now', capital, rec);
+      runPlan(paths, c, chosen.monthly, c.timing, capital, rec);
       fan = fanFrom(rec, paths.N, nY, inp.age);
     }
 
@@ -497,15 +599,17 @@
       capitalNominal,
       capitalFailRate: decumFailRate(paths, c, capital),
       withdrawalRate: capital > 0 ? (firstMonth * 12) / capital : 0,
-      now,
-      dip,
+      ...plans,
+      plan: chosen,
       fan,
     };
   }
 
-  /* Both methods. `history` null skips the block bootstrap. `onProgress(done, total)` lets a
-   * page repaint between steps. */
-  async function analyze(inp, now, history, onProgress) {
+  /* Both methods. `history` null skips the block bootstrap. `onProgress(done, total, method)`
+   * lets a page repaint between steps. Each method answers for all three timings; `plan` is
+   * the chosen one. */
+  async function analyze(inp0, now, history0, onProgress) {
+    const [inp, history] = asSingle(inp0, history0);
     const tl = buildTimeline(inp, now);
     const methods = [['mc', () => generateParametric(inp, tl)]];
     if (history) methods.push(['block', () => generateBootstrap(inp, tl, history)]);
@@ -513,30 +617,40 @@
       tTarget: tl.tTarget,
       retireDate: { year: tl.yearOf(tl.tTarget), month: tl.calMonth(tl.tTarget) },
       breakdown: spendingBreakdown(inp, tl),
+      smart: null,
       methods: { mc: null, block: null },
     };
+    const per = 80; // about the number of searches one method takes
+    const total = per * methods.length;
+    let base = 0;
     let steps = 0;
-    const expected = 60 * methods.length;
+    let current = '';
     const onStep = onProgress
       ? async () => {
           steps++;
-          onProgress(Math.min(steps, expected - 1), expected);
+          onProgress(base + Math.min(steps, per - 1), total, current);
           if (steps % 2 === 0) await tick();
         }
       : null;
     for (const [name, gen] of methods) {
+      current = name;
+      steps = 0;
       if (onStep) await tick();
-      result.methods[name] = await analyzeMethod(inp, tl, gen(), onStep);
+      const paths = gen();
+      if (!result.smart) result.smart = smartPair(redShare(inp, history, paths));
+      result.methods[name] = await analyzeMethod(inp, tl, paths, result.smart, onStep);
+      base += per;
     }
-    if (onProgress) onProgress(expected, expected);
+    if (onProgress) onProgress(total, total, current);
     return result;
   }
 
   /* Historical stress test: retire with `capital` (today's money) at history month h0 and live
    * the plan's retirement spending on the real returns and inflation that followed, until the
    * data or the plan end. Sell months follow the real calendar. Money is in today's money. */
-  function stressTest(inp, now, history, h0, capital) {
-    checkAlloc(inp);
+  function stressTest(inp0, now, history0, h0, capital) {
+    checkAlloc(inp0);
+    const [inp, history] = asSingle(inp0, history0);
     const tl = buildTimeline(inp, now);
     const { R, I, H } = historyTables(inp, history);
     if (!(h0 >= 0 && h0 < H)) throw new Error('Pick a start month inside the history.');
@@ -556,7 +670,7 @@
       cashG: Math.pow(1 + inp.cash.rate * (1 - inp.taxes.other), 1 / 12),
       bufMonths: inp.cash.months,
     };
-    const sink = makeSink(inp, L, 1);
+    const sink = makeSink(inp, L, 1, 0);
     sink.startPath(0);
     const r = new Float64Array(5);
     for (let k = 0; k < L; k++) {
@@ -596,6 +710,9 @@
     buildTimeline,
     spendingBreakdown,
     makeContext,
+    asSingle,
+    smartPair,
+    buy,
     generateParametric,
     generateBootstrap,
     decumulate,

@@ -207,7 +207,7 @@ The palette is a cool graphite ladder with one soft blue signal and three state 
 
 ### Hierarchy
 - **Display** (Geist Mono 500, clamp 21–30px, 1.1, -0.03em): the capital and monthly figures in each method column.
-- **Display small** (Geist Mono 500, clamp 17–20px): secondary figures such as the "waiting for a dip" amount.
+- **Display small** (Geist Mono 500, clamp 17–20px): secondary figures such as the other timings' monthly amounts.
 - **Headline** (Geist 600, 19px, 1.2): the product name in the top bar, used once.
 - **Title** (Geist 600, 15px, 1.3): panel headings. Method column headings use Geist 500 at 14px.
 - **Body** (Geist 400, 14.5px, 1.5): verdict sentences (15px) and explanatory copy, held to 62–75ch.
@@ -224,7 +224,7 @@ The palette is a cool graphite ladder with one soft blue signal and three state 
 
 ## Layout
 
-The page is a console with a maximum width of 1480px and a 16px gutter. A top bar holds the name, a one-line purpose and the Minimal/Complete switch. Below it is the desk: a grid whose 1px gap shows the seam colour through, so the panels look tiled rather than floating. From 1040px wide, the plan panel takes a fixed 25rem column on the left, and in Minimal mode its contents stay in view as the page scrolls (sticky). The results stack fills the rest. From 1320px wide, the stack splits into two columns, and panels marked wide span both. Inside the results panel, the two method columns sit side by side on the seam grid at every width.
+The page is a console with a maximum width of 1480px and a 16px gutter. A top bar holds the name, a one-line purpose, the Guided setup button and the Minimal/Complete switch. Below it is the desk: a grid whose 1px gap shows the seam colour through, so the panels look tiled rather than floating. From 1040px wide, the plan panel takes a fixed 25rem column on the left, and in Minimal mode its contents stay in view as the page scrolls (sticky). The results stack fills the rest. From 1320px wide, the stack splits into two columns, and panels marked wide span both. Inside the results panel, the two method columns sit side by side on the seam grid at every width.
 
 Spacing is tight: 16px panel padding (12px at 640px and below), 12px group-header padding, and 6–14px between elements. Form rows pair a flexible label with a right-hand field column of 7.5–10.5rem. The status bar is fixed to the bottom with a 64px reserved height. The body is padded by that height, and html `scroll-padding-bottom` is set to it plus 24px. Below 1040px the plan spans the desk, and its contents stop at 40rem so each label stays near its field. On phones the plan comes first, then the results, inputs go up to 16px so iOS does not zoom, and the status bar's side padding drops to the 12px gutter.
 
@@ -271,7 +271,10 @@ Quiet and outlined, except the one that runs the plan.
 - **Variants:** Ink for the "plan with this" flag on the safer figure in each pair, Fresh, Stale and Error for result state, Ink Tertiary for neutral states. A hidden flag keeps its space so the method columns line up.
 
 ### Navigation
-There is no site navigation. The top bar carries the name, a one-line purpose and the Minimal/Complete switch. Minimal is the default mode and the choice is remembered per browser. In Complete mode the plan panel becomes collapsible groups. Each header is a full-width button in Geist 500 at 14px, with a mono summary on the right and a chevron. Headers fill with Graphite Hover on hover.
+There is no site navigation. The top bar carries the name, a one-line purpose, a secondary Guided setup button and the Minimal/Complete switch. A first visit opens the guided setup; after it, Minimal is the mode and the choice is remembered per browser. In Complete mode the plan panel becomes collapsible groups. Each header is a full-width button in Geist 500 at 14px, with a mono summary on the right and a chevron. Headers fill with Graphite Hover on hover.
+
+### Guided Setup
+Minimal's questions one per page, using the plan's own fields (no copies). The plan panel takes the whole desk, its content held to 36rem; the results stack and the status bar are hidden. Above the fields: a 2px Seam track with a Signal Blue fill for progress, "Step n of N" in mono Ink Tertiary, and the question in Geist 600 at 19px. Below: Back (secondary), a borderless "Skip to the planner", and Next (primary, "See my plan" on the last step). Enter moves on; field errors behave as in the plan and send the visitor back to the step that holds the field.
 
 ### Status Bar (signature)
 A full-width bar fixed to the bottom on Graphite Panel, with a top seam and padding that respects the safe area. On the left is the run log in Geist Mono 12.5px, led by a 7px dot: grey when idle, blue while running, green when fresh, amber with amber text when stale, red with red text on error. Calculate sits on the right. On phones the log wraps to two lines.

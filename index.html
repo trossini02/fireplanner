@@ -369,6 +369,25 @@ h1, h2, h3 { text-wrap: balance; }
 .how ul { margin: 0; padding-left: 1.1em; display: grid; gap: 8px; color: var(--fg-2); font-size: 13.5px; max-width: 75ch; }
 .how b { color: var(--fg); font-weight: 500; }
 
+/* ---------- guided setup: the plan's own fields, one step at a time ---------- */
+.top-r { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.guide, .gnav { max-width: 36rem; margin: 0 auto; padding-inline: 16px; }
+.guide { padding-top: 24px; }
+.gbar { height: 2px; background: var(--seam); border-radius: 1px; overflow: hidden; margin-bottom: 14px; }
+.gbar span { display: block; height: 100%; width: 0; background: var(--acc); transition: width 160ms ease-out; }
+.gstep { margin: 0; color: var(--fg-3); font: 400 12.5px var(--mono); }
+.guide h2 { margin: 4px 0 0; font: 600 19px/1.25 var(--font); letter-spacing: -0.01em; }
+.guide h2:focus { outline: none; }
+.gnav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 8px; padding-bottom: 28px; }
+.gnav .gskip { border-color: transparent; color: var(--fg-2); }
+.gnav .run { margin-left: auto; }
+body[data-guided] { padding-bottom: 0; }
+body[data-guided] .stack, body[data-guided] .statusbar { display: none; }
+body[data-guided] .desk { grid-template-columns: minmax(0, 1fr); }
+body[data-guided] .plan .plan-in { max-width: 36rem; margin: 0 auto; padding: 12px 0 4px; position: static; }
+body[data-guided] .plan .grp:not([data-now]),
+body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
+
 /* ---------- status bar ---------- */
 .statusbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
@@ -413,6 +432,9 @@ h1, h2, h3 { text-wrap: balance; }
   .log .lg-b::before { content: none; }
   .plans li { grid-template-columns: auto minmax(0, 1fr); }
   .plans .acts { grid-column: 2; }
+  .guide, .gnav { padding-inline: 12px; }
+  .gnav .gskip { padding-inline: 6px; }
+  .gnav .run { min-width: 6.5rem; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
 </style>
@@ -424,26 +446,34 @@ h1, h2, h3 { text-wrap: balance; }
       <h1>PAC FIRE Planner</h1>
       <p>How much you need to retire early, and how much to invest every month to get there. Each answer is tested on 2,000 futures, twice: random markets and real market history.</p>
     </div>
-    <div class="seg joined" role="radiogroup" aria-label="How many inputs">
-      <label><input type="radio" name="mode" value="min" checked><span>Minimal</span></label>
-      <label><input type="radio" name="mode" value="full"><span>Complete</span></label>
+    <div class="top-r">
+      <button type="button" class="btn" id="guideBtn">Guided setup</button>
+      <div class="seg joined" role="radiogroup" aria-label="How many inputs">
+        <label><input type="radio" name="mode" value="min" checked><span>Minimal</span></label>
+        <label><input type="radio" name="mode" value="full"><span>Complete</span></label>
+      </div>
     </div>
   </header>
   <noscript><p class="nojs">PAC FIRE Planner is a free early retirement (FIRE) calculator. It works out the capital you need to retire early and the fixed monthly investment (PAC, piano di accumulo) to get there, and tests each answer on 2,000 futures with Monte Carlo and with block Monte Carlo on real monthly market history since 1990. It runs entirely in your browser and needs JavaScript: please turn JavaScript on to use it.</p></noscript>
 
   <main class="desk" id="desk">
     <form class="plan" id="plan" data-mode="min" novalidate aria-label="Your plan">
+      <div class="guide" id="guideHead" hidden>
+        <div class="gbar" aria-hidden="true"><span id="gBar"></span></div>
+        <p class="gstep" id="gStep"></p>
+        <h2 id="gQ" tabindex="-1"></h2>
+      </div>
       <div class="plan-in">
         <section class="grp" data-grp="you">
           <button type="button" class="grp-h" aria-expanded="true"><b>You</b></button>
           <div class="grp-b">
-            <div class="row"><label for="country">Country you'll live in</label>
+            <div class="row" data-step="1"><label for="country">Country you'll live in</label>
               <div class="field"><select id="country"></select></div></div>
-            <div class="row xx-row" data-full><label for="currency">Currency</label>
+            <div class="row xx-row" data-full data-step="1"><label for="currency">Currency</label>
               <div class="field"><select id="currency"></select></div></div>
-            <div class="row"><label for="age">Your age today</label>
+            <div class="row" data-step="2"><label for="age">Your age today</label>
               <div class="field"><input id="age" type="text" inputmode="numeric" min="16" max="90" step="1" value="30"><span class="u">yrs</span></div></div>
-            <div class="row"><label for="retireYear">Retire in<span class="hint" id="retireHint"></span></label>
+            <div class="row" data-step="3"><label for="retireYear">Retire in<span class="hint" id="retireHint"></span></label>
               <div class="field"><input id="retireYear" type="text" inputmode="numeric" step="1" value="2045"></div></div>
             <div class="row" data-full><label for="endAge">Plan until age<span class="hint">The money must last until then.</span></label>
               <div class="field"><input id="endAge" type="text" inputmode="numeric" min="50" max="110" step="1" value="95"><span class="u">yrs</span></div></div>
@@ -455,7 +485,7 @@ h1, h2, h3 { text-wrap: balance; }
         <section class="grp" data-grp="spend">
           <button type="button" class="grp-h" aria-expanded="true"><b>Spending</b><span class="sum" id="spendSum"></span></button>
           <div class="grp-b">
-            <div class="chips">
+            <div class="chips" data-step="4">
               <span class="lbl" id="lifestyleLbl">Lifestyle</span>
               <div class="seg" role="radiogroup" aria-labelledby="lifestyleLbl">
                 <label><input type="radio" name="lifestyle" value="frugal"><span>Frugal</span></label>
@@ -465,7 +495,7 @@ h1, h2, h3 { text-wrap: balance; }
                 <label><input type="radio" name="lifestyle" value="custom"><span>My own</span></label>
               </div>
             </div>
-            <div class="row" data-min><label for="mSpend">Monthly spending<span class="hint">Today's money, for the whole household.</span></label>
+            <div class="row" data-min data-step="4"><label for="mSpend">Monthly spending<span class="hint">Today's money, for the whole household.</span></label>
               <div class="field"><input id="mSpend" data-fmt="money" type="text" inputmode="decimal" step="any" min="0"><span class="u cur"></span></div></div>
             <div class="chips" data-full>
               <span class="lbl" id="adultsLbl">Adults in the household</span>
@@ -504,7 +534,7 @@ h1, h2, h3 { text-wrap: balance; }
         <section class="grp" data-grp="home">
           <button type="button" class="grp-h" aria-expanded="true"><b>Home and children</b></button>
           <div class="grp-b">
-            <div class="chips">
+            <div class="chips" data-step="5">
               <span class="lbl" id="homeLbl">Home</span>
               <div class="seg" role="radiogroup" aria-labelledby="homeLbl">
                 <label><input type="radio" name="home" value="owned" checked><span>Paid off</span></label>
@@ -512,7 +542,7 @@ h1, h2, h3 { text-wrap: balance; }
                 <label><input type="radio" name="home" value="rent"><span>Rent</span></label>
               </div>
             </div>
-            <div id="homeFields" class="chips" hidden>
+            <div id="homeFields" class="chips" data-step="5" hidden>
               <div class="row"><label for="homePayment" id="homePaymentLbl">Monthly payment</label>
                 <div class="field"><input id="homePayment" data-fmt="money" type="text" inputmode="decimal" step="any" data-scale="cost"><span class="u cur"></span></div></div>
               <div class="row" id="paidOffRow"><label for="paidOffYear">Paid off in<span class="hint">The payment stays the same; inflation doesn't raise it.</span></label>
@@ -532,22 +562,67 @@ h1, h2, h3 { text-wrap: balance; }
         <section class="grp" data-grp="inv">
           <button type="button" class="grp-h" aria-expanded="true"><b>Investments</b><span class="sum" id="allocSumTop"></span></button>
           <div class="grp-b">
-            <div class="row"><label for="existing">Already invested<span class="hint">Counted from today, at its current value.</span></label>
+            <div class="row" data-step="6"><label for="existing">Already invested<span class="hint">Counted from today, at its current value.</span></label>
               <div class="field"><input id="existing" data-fmt="money" type="text" inputmode="decimal" step="any" data-money="30000" data-scale="fx"><span class="u cur"></span></div></div>
-            <p class="subnote" data-full>Your split, and what you expect each asset to do. Growth is yearly and after inflation. The last column shows what <span class="histspan">history</span> delivered (used by block Monte Carlo).</p>
-            <div class="tw" data-full>
+            <div class="chips" data-step="7">
+              <span class="lbl" id="pmodeLbl">Describe your investments by</span>
+              <div class="seg" role="radiogroup" aria-labelledby="pmodeLbl">
+                <label><input type="radio" name="pmode" value="assets" checked><span>Asset split</span></label>
+                <label><input type="radio" name="pmode" value="single"><span>One average and volatility</span></label>
+              </div>
+              <p class="subnote" id="pmodeNote"></p>
+              <div id="singleFields" class="chips" hidden>
+                <div class="row"><label for="pGrowth">Average growth a year<span class="hint">Compound, after inflation.</span></label>
+                  <div class="field"><input id="pGrowth" type="text" inputmode="decimal" step="any" value="3.5"><span class="u">%</span></div></div>
+                <div class="row"><label for="pVol">Volatility a year<span class="hint">Standard deviation of yearly returns.</span></label>
+                  <div class="field"><input id="pVol" type="text" inputmode="decimal" step="any" value="11"><span class="u">%</span></div></div>
+              </div>
+            </div>
+            <p class="subnote by-asset" data-full>Your split, and what you expect each asset to do. Growth is yearly and after inflation. The last column shows what <span class="histspan">history</span> delivered (used by block Monte Carlo).</p>
+            <div class="tw by-asset" data-full>
               <table class="assets" id="assetTable">
                 <thead><tr><th>Asset</th><th>Split</th><th>Growth</th><th>Volatility</th><th class="histspan">History</th></tr></thead>
                 <tbody></tbody>
                 <tfoot><tr><td>Total</td><td id="allocSum" style="text-align:right" class="mono"></td><td colspan="3"></td></tr></tfoot>
               </table>
             </div>
-            <p class="subnote" data-full>Precious metals are half gold, half an index of all precious metals (gold, silver and platinum).</p>
-            <details class="sub" data-full>
+            <p class="subnote by-asset" data-full>Precious metals are half gold, half an index of all precious metals (gold, silver and platinum).</p>
+            <details class="sub by-asset" data-full>
               <summary>Correlations between assets (Monte Carlo)</summary>
               <div class="tw"><table class="corr" id="corrTable"></table></div>
               <p class="subnote">1 moves together, 0 unrelated, −1 opposite.</p>
             </details>
+          </div>
+        </section>
+
+        <section class="grp" data-grp="how">
+          <button type="button" class="grp-h" aria-expanded="true"><b>How you invest</b></button>
+          <div class="grp-b">
+            <div class="chips" data-step="8">
+              <span class="lbl" id="timingLbl">When each month's money goes in</span>
+              <div class="seg" role="radiogroup" aria-labelledby="timingLbl">
+                <label><input type="radio" name="timing" value="now" checked><span>Every month</span></label>
+                <label><input type="radio" name="timing" value="dip"><span>After a fall</span></label>
+                <label><input type="radio" name="timing" value="smart"><span>More after red months</span></label>
+              </div>
+              <p class="subnote" id="timingNote"></p>
+              <div id="dipFields" class="chips" hidden>
+                <div class="row"><label for="buyDrop">A month in which stocks fall at least<span class="hint">Before inflation.</span></label>
+                  <div class="field"><input id="buyDrop" type="text" inputmode="decimal" step="any" value="5"><span class="u">%</span></div></div>
+                <div class="row" data-full><label for="maxWait">Invest anyway after<span class="hint">Months of saving without such a fall.</span></label>
+                  <div class="field"><input id="maxWait" type="text" inputmode="numeric" step="1" value="24"><span class="u">months</span></div></div>
+              </div>
+            </div>
+            <div class="chips" data-step="9" id="buyModeBox">
+              <span class="lbl" id="buyModeLbl">New money buys</span>
+              <div class="seg" role="radiogroup" aria-labelledby="buyModeLbl">
+                <label><input type="radio" name="buyMode" value="split" checked><span>By your split</span></label>
+                <label><input type="radio" name="buyMode" value="rebal"><span>What has fallen behind</span></label>
+              </div>
+              <p class="subnote" id="buyModeNote"></p>
+            </div>
+            <div class="row" data-step="10"><label for="contribGrowth">Raise the monthly amount every year by<span class="hint">0 keeps it the same. The answer is the first year's amount.</span></label>
+              <div class="field"><input id="contribGrowth" type="text" inputmode="decimal" step="any" value="0"><span class="u">%/yr</span></div></div>
           </div>
         </section>
 
@@ -587,8 +662,6 @@ h1, h2, h3 { text-wrap: balance; }
             </div>
             <div class="row"><label for="dipDrop">A dip is a fall from the peak of</label>
               <div class="field"><input id="dipDrop" type="text" inputmode="decimal" step="any" value="10"><span class="u">%</span></div></div>
-            <div class="row"><label for="maxWait">Wait for a dip at most</label>
-              <div class="field"><input id="maxWait" type="text" inputmode="numeric" step="1" value="24"><span class="u">months</span></div></div>
             <div class="row"><label for="maxDelay">Extra years you'd keep investing<span class="hint">If you're short of the capital in your target year.</span></label>
               <div class="field"><input id="maxDelay" type="text" inputmode="numeric" min="0" max="10" step="1" value="3"><span class="u">yrs</span></div></div>
             <div class="row"><label for="blockYears">History block length<span class="hint">Block Monte Carlo joins blocks of this length.</span></label>
@@ -605,6 +678,11 @@ h1, h2, h3 { text-wrap: balance; }
             </details>
           </div>
         </section>
+      </div>
+      <div class="gnav" id="guideNav" hidden>
+        <button type="button" class="btn" id="gBack">Back</button>
+        <button type="button" class="btn gskip" id="gSkip">Skip to the planner</button>
+        <button type="button" class="run" id="gNext">Next</button>
       </div>
     </form>
 
@@ -701,14 +779,16 @@ h1, h2, h3 { text-wrap: balance; }
         <div class="ph"><h2 id="howH">How the numbers work</h2></div>
         <ul>
           <li><b>Capital you need</b> is the smallest amount, rounded up, that runs out before your "plan until" age in no more than your accepted share of futures, if you retire in January of your target year. It is in today's money.</li>
-          <li><b>Invest every month</b> is the smallest fixed monthly amount, rounded up, that keeps the whole plan within that share, counting what you already have invested. If your money is short of the capital in January of the target year, you keep investing for another year, up to the limit. After that you retire regardless.</li>
-          <li><b>Waiting for a dip</b> keeps new money in cash until stocks are the chosen percentage below their peak (today counts as a peak), and invests anyway after the maximum wait. Money already invested stays invested.</li>
+          <li><b>Invest every month</b> is the smallest monthly amount, rounded up, that keeps the whole plan within that share, counting what you already have invested. If you raise it every year, it is the first year's amount. If your money is short of the capital in January of the target year, you keep investing for another year, up to the limit. After that you retire regardless.</li>
+          <li><b>When the money goes in.</b> <i>Every month</i> invests each month's amount at the end of that month. <i>After a fall</i> keeps it in cash, earning the cash rate, and invests everything saved after a month in which stocks fell by your chosen share or more, or after the longest wait. <i>More after red months</i> invests 150% of the month's amount after a month in which stocks fell and less after one in which they rose, set from history so the two average 100%; money not yet invested waits in cash. Each rule only reacts to the month just ended. All three are calculated, so you can see which needs the least.</li>
+          <li><b>Nothing is sold while you save.</b> Each asset is followed on its own. New money buys by your split, or goes first to what is furthest below its share, which pulls the portfolio back toward your split without selling. From retirement the portfolio is kept at your split every month, and that first return to the split is not taxed.</li>
+          <li><b>One average and volatility</b> replaces the asset split with a single investment, taxed at the stock-gains rate. Monte Carlo draws from your two numbers. Block Monte Carlo replays the standard split's history, with its ups and downs scaled to your numbers, so crashes come at the same times.</li>
           <li><b>In retirement</b> you hold a cash buffer of several months of spending. It is topped up only in your sell months, and not while stocks are in a dip. If the cash would not cover next month, just one month is sold.</li>
           <li><b>Taxes</b> are charged on the gain part of each sale, using your average purchase cost. A yearly wealth or stamp tax is taken each January, and cash interest is taxed at the "other" rate. Country rates are rough starting points checked in October 2026. Check your own situation.</li>
           <li><b>Inflation is random.</b> In Monte Carlo it drifts around your average and sometimes spikes by 5 points, then fades. Block Monte Carlo replays real US inflation month by month, moved to your average, so 2022 comes with its bond losses. Spending follows inflation; the monthly investment and a mortgage payment stay fixed in money, so inflation erodes them.</li>
           <li><b>Monte Carlo</b> draws random monthly returns from the growth, volatility and correlations in Complete. <b>Block Monte Carlo</b> joins random blocks of real monthly returns, after inflation, from <span id="histWindow">history</span>: US and developed-world stocks (Ken French Data Library), US 10-year Treasuries and Baa corporate bonds (rebuilt from <a href="https://fred.stlouisfed.org/" target="_blank" rel="noopener">FRED</a> yields), and precious metals, half gold and half the all-precious-metals index (<a href="https://www.worldbank.org/en/research/commodity-markets" target="_blank" rel="noopener">World Bank</a> prices).</li>
           <li><b>Limits of the history:</b> it starts in 1990, so it misses the 1970s inflation and the early-1980s bond crash. US stocks grew <span id="histUs">about 8%</span> a year above inflation and gold rallied, so the history leans optimistic. Bond series come from monthly averages, which smooths their swings. Corporate bonds ignore defaults, and the data are in US dollars, so currency moves are not included.</li>
-          <li><b>Minimal</b> fixes the settings listed in its plan panel, slightly cautious: returns half a point below Complete's (in both methods), inflation half a point above your country's, and cash at 2%.</li>
+          <li><b>Minimal</b> fixes the settings listed in its plan panel, slightly cautious: returns half a point below Complete's (in both methods), inflation half a point above your country's, and cash at 2%. Your own average and volatility are used as you enter them. <b>Guided setup</b> asks Minimal's questions one at a time, then shows the result.</li>
           <li>Not included: state pension, other income in retirement, and cutting spending in bad years. This is a planning simulation, not financial advice.</li>
         </ul>
       </section>
@@ -822,6 +902,31 @@ h1, h2, h3 { text-wrap: balance; }
     barista: 'Barista: everything you spend today, minus part-time income until the age you choose.',
   };
 
+  const TIMING_NAMES = { now: 'Every month', dip: 'After a fall', smart: 'More after red months' };
+  const TIMING_NOTES = {
+    now: "Each month's amount goes in at the end of the month.",
+    dip: "Each month's amount waits in cash. Everything saved goes in after a month in which stocks fell at least this much.",
+    smart: "150% of the month's amount after a month in which stocks fell, less after one in which they rose, so the two average 100%. What isn't invested yet waits in cash.",
+  };
+  const BUY_NOTES = {
+    split: "Each month's money is split like your portfolio. Nothing is sold, so the split drifts with the markets.",
+    rebal: "Each month's money goes first to whatever is furthest below its share, pulling the portfolio back toward your split without selling.",
+  };
+  // Guided setup: one question per step; the fields are the plan's own ([data-step] in the form).
+  const GUIDE = [
+    null,
+    'Where will you live when you retire?',
+    'How old are you?',
+    'When would you like to retire?',
+    'How much will you spend a month?',
+    'What about your home?',
+    'How much have you already invested?',
+    'How do you want to describe your investments?',
+    "When does each month's money go in?",
+    "What does each month's money buy?",
+    'Will you invest more every year?',
+  ];
+
   const STRESS_NOTES = {
     '2000-01': 'Just before the dot-com crash, then 2008.',
     '2007-10': 'The market peak before the 2008 crash.',
@@ -880,6 +985,7 @@ h1, h2, h3 { text-wrap: balance; }
   const compact = (x, c) => new Intl.NumberFormat('en', { style: 'currency', currency: c, notation: 'compact', maximumFractionDigits: x >= 1e6 ? 2 : 0 }).format(x);
   const fmtCompact = (x) => compact(x, resCur());
   const pct = (x, d = 0) => (x * 100).toFixed(d) + '%';
+  const pctN = (x) => parseFloat((x * 100).toFixed(2)) + '%'; // a rate the visitor typed, as typed
   const monthLabel = (y, m) => `${MONTHS[m]} ${y}`;
   const histDate = (h) => {
     const [sy, sm] = HIST.start.split('-').map(Number);
@@ -1051,11 +1157,17 @@ h1, h2, h3 { text-wrap: balance; }
     const c = country();
     const infl = (c.currency ? c.inflation : num('inflation') || 2) / 100 + MIN.inflAdd;
     const alloc = ASSETS.map((a) => `${a.w}%`).join(' / ');
+    const split = radio('pmode') !== 'single'
+      ? [
+          ['Portfolio', `70% stocks, 25% bonds, 5% metals`],
+          ['Split US / World / Corp / Gov / Metals', alloc],
+          ['Growth after inflation, a year', ASSETS.map((a) => (a.r - MIN.cut * 100).toFixed(1)).join(' / ') + '%'],
+          ['History', 'returns 0.5 points lower'],
+        ]
+      : [['History', 'the standard split, scaled to your numbers']];
     return [
-      ['Portfolio', `70% stocks, 25% bonds, 5% metals`],
-      ['Split US / World / Corp / Gov / Metals', alloc],
-      ['Growth after inflation, a year', ASSETS.map((a) => (a.r - MIN.cut * 100).toFixed(1)).join(' / ') + '%'],
-      ['History', 'returns 0.5 points lower'],
+      ...split,
+      ...(radio('timing') === 'dip' ? [['Wait for a fall at most', `${MIN.maxWait} months`]] : []),
       ['Inflation', `${(infl * 100).toFixed(1)}% average, varies at random`],
       ['Taxes', c.currency ? `${c.name} rates` : 'rates in Complete'],
       ['Money lasts until', `age ${MIN.endAge}`],
@@ -1079,10 +1191,23 @@ h1, h2, h3 { text-wrap: balance; }
     ASSETS.forEach((a) => (s += num('w-' + a.id) || 0));
     const ok = Math.abs(s - 100) < 0.05;
     const txt = (Math.round(s * 10) / 10).toString() + '%';
+    const single = radio('pmode') === 'single';
     $('#allocSum').textContent = txt;
     $('#allocSum').className = ok ? 'mono' : 'mono bad';
-    $('#allocSumTop').textContent = ok ? ASSETS.map((a) => Math.round(num('w-' + a.id) || 0)).join('/') : `adds up to ${txt}`;
-    $('#allocSumTop').className = ok ? 'sum' : 'sum bad';
+    $('#allocSumTop').textContent = single ? `${$('#pGrowth').value}% / ${$('#pVol').value}%` : ok ? ASSETS.map((a) => Math.round(num('w-' + a.id) || 0)).join('/') : `adds up to ${txt}`;
+    $('#allocSumTop').className = ok || single ? 'sum' : 'sum bad';
+    $('#singleFields').hidden = !single;
+    $$('.by-asset').forEach((el) => (el.hidden = single));
+    $('#buyModeBox').hidden = single;
+    $('#pmodeNote').textContent = single
+      ? 'One investment, taxed as stocks. Block Monte Carlo replays the standard split’s history, scaled to these numbers.'
+      : mode() === 'min'
+        ? 'The standard split, listed under "What Minimal assumes".'
+        : '';
+    const timing = radio('timing');
+    $('#dipFields').hidden = timing !== 'dip';
+    $('#timingNote').textContent = TIMING_NOTES[timing];
+    $('#buyModeNote').textContent = BUY_NOTES[radio('buyMode')];
 
     const fire = radio('fire');
     $('#fireNote').textContent = FIRE_NOTES[fire];
@@ -1169,30 +1294,41 @@ h1, h2, h3 { text-wrap: balance; }
         paidOffYear: home === 'mortgage' ? need('paidOffYear', 'the year the mortgage is paid off') : 0,
       },
       existing: Math.max(0, num('existing') || 0),
+      timing: radio('timing'),
+      buyMode: radio('buyMode'),
+      buyDrop: need('buyDrop', 'the size of a fall') / 100,
+      contribGrowth: need('contribGrowth', 'the yearly raise') / 100,
+      single: radio('pmode') === 'single' ? { growth: need('pGrowth', 'the average growth') / 100, vol: Math.max(0, need('pVol', 'the volatility')) / 100 } : null,
       paths: PATHS,
       seed: SEED,
     };
     if (common.age < 16 || common.age > 90) throw new FieldError('age', 'Enter an age between 16 and 90.');
     if (common.spending.essentials + common.spending.extras <= 0) throw new FieldError(isMin ? 'mSpend' : 'sp-groceries', 'Enter what you spend each month.');
+    if (common.single && Math.abs(common.single.growth) > 0.5) throw new FieldError('pGrowth', 'Enter a growth between −50% and 50% a year.');
+    if (common.buyDrop <= 0 || common.buyDrop >= 1) throw new FieldError('buyDrop', 'A fall must be between 0.1% and 99%.');
+    if (common.contribGrowth < 0 || common.contribGrowth > 1) throw new FieldError('contribGrowth', 'Enter a yearly raise between 0% and 100%.');
+    // The standard split: Minimal's portfolio, and the history behind one average and volatility.
+    const standard = (cut) => {
+      const s = { alloc: {}, returns: {}, vols: {} };
+      ASSETS.forEach((a) => {
+        s.alloc[a.id] = a.w / 100;
+        s.returns[a.id] = a.r / 100 - cut;
+        s.vols[a.id] = a.v / 100;
+      });
+      return s;
+    };
 
     if (isMin) {
       const c = country();
       const tx = c.currency ? c : { equity: num('taxEquity') || 0, gov: num('taxGov') || 0, other: num('taxOther') || 0, wealth: num('taxWealth') || 0 };
-      const alloc = {};
-      const returns = {};
-      const vols = {};
-      ASSETS.forEach((a) => {
-        alloc[a.id] = a.w / 100;
-        returns[a.id] = a.r / 100 - MIN.cut;
-        vols[a.id] = a.v / 100;
-      });
+      const { alloc, returns, vols } = standard(MIN.cut);
       return checkTimeline({
         ...common,
         endAge: MIN.endAge,
         failTarget: MIN.fail,
         inflation: (c.currency ? c.inflation : num('inflation') || 2) / 100 + MIN.inflAdd,
         inflationRisk: { spread: MIN.spread, spikeYears: MIN.spikeYears },
-        historyCut: MIN.cut,
+        historyCut: common.single ? 0 : MIN.cut,
         fireType: 'regular',
         barista: { income: 0, untilAge: 0 },
         children: [],
@@ -1210,23 +1346,23 @@ h1, h2, h3 { text-wrap: balance; }
       }, true);
     }
 
-    const alloc = {};
-    const returns = {};
-    const vols = {};
-    let wsum = 0;
-    ASSETS.forEach((a) => {
-      alloc[a.id] = (num('w-' + a.id) || 0) / 100;
-      wsum += alloc[a.id];
-      returns[a.id] = need('r-' + a.id, `${a.label} growth`) / 100;
-      vols[a.id] = Math.max(0, need('v-' + a.id, `${a.label} volatility`)) / 100;
-    });
-    if (Math.abs(wsum - 1) > 0.0005) throw new FieldError('w-usStocks', `Your portfolio split adds up to ${(wsum * 100).toFixed(1)}%. Make it 100%.`);
+    const { alloc, returns, vols } = standard(0);
     const corr = E.DEFAULT_CORR.map((row) => row.slice());
-    for (let i = 0; i < 5; i++)
-      for (let j = i + 1; j < 5; j++) {
-        const v = need(`c-${i}-${j}`, 'every correlation');
-        corr[i][j] = corr[j][i] = Math.max(-1, Math.min(1, v));
-      }
+    if (!common.single) {
+      let wsum = 0;
+      ASSETS.forEach((a) => {
+        alloc[a.id] = (num('w-' + a.id) || 0) / 100;
+        wsum += alloc[a.id];
+        returns[a.id] = need('r-' + a.id, `${a.label} growth`) / 100;
+        vols[a.id] = Math.max(0, need('v-' + a.id, `${a.label} volatility`)) / 100;
+      });
+      if (Math.abs(wsum - 1) > 0.0005) throw new FieldError('w-usStocks', `Your portfolio split adds up to ${(wsum * 100).toFixed(1)}%. Make it 100%.`);
+      for (let i = 0; i < 5; i++)
+        for (let j = i + 1; j < 5; j++) {
+          const v = need(`c-${i}-${j}`, 'every correlation');
+          corr[i][j] = corr[j][i] = Math.max(-1, Math.min(1, v));
+        }
+    }
     const inp = {
       ...common,
       endAge: need('endAge', 'plan until age'),
@@ -1335,11 +1471,11 @@ h1, h2, h3 { text-wrap: balance; }
     const t0 = performance.now();
     try {
       let phase = '';
-      const result = await E.analyze(inp, NOW, HIST, (done, total) => {
+      const result = await E.analyze(inp, NOW, HIST, (done, total, which) => {
         const p = done / total;
         bar.style.width = (p * 100).toFixed(1) + '%';
         // Screen readers hear each method once; the percentage is for the eye only.
-        const name = p < 0.5 ? 'Monte Carlo' : 'block Monte Carlo';
+        const name = which === 'block' ? 'block Monte Carlo' : 'Monte Carlo';
         if (name !== phase) {
           phase = name;
           setStatus('run', `Calculating ${name}<span aria-hidden="true">: <span id="pct"></span></span>`, true);
@@ -1390,7 +1526,7 @@ h1, h2, h3 { text-wrap: balance; }
   function figures(methods) {
     const ms = [methods.mc, methods.block].filter(Boolean);
     const capital = Math.max(...ms.map((m) => m.capital));
-    const mons = ms.map((m) => m.now.monthly);
+    const mons = ms.map((m) => m.plan.monthly);
     const monthly = mons.some((x) => x === null) ? null : Math.max(...mons);
     return { capital, monthly };
   }
@@ -1416,15 +1552,19 @@ h1, h2, h3 { text-wrap: balance; }
     } else if (f.monthly === 0) {
       $('#verdict').innerHTML = `You need <b>${fmtRes(f.capital)}</b>, and what you have already invested is enough on its own.`;
     } else {
-      $('#verdict').innerHTML = `Plan with <b>${fmtRes(f.capital)}</b> and invest <b>${fmtRes(f.monthly)}</b> a month from ${startLabel}, the higher figure of each method. You retire in January ${ry}, or up to ${inp.maxDelayYears} years later if markets fall short.`;
+      $('#verdict').innerHTML = `Plan with <b>${fmtRes(f.capital)}</b> and ${inp.timing === 'now' ? 'invest' : 'set aside'} <b>${fmtRes(f.monthly)}</b> a month from ${startLabel}${inp.contribGrowth > 0 ? `, raising it ${pctN(inp.contribGrowth)} every year` : ''}, the higher figure of each method. You retire in January ${ry}, or up to ${inp.maxDelayYears} years later if markets fall short.`;
     }
 
     const nominalRounded = (m) => Math.ceil(m.capitalNominal / inp.units.capital - 1e-9) * inp.units.capital;
     const mon = (x) => (x === null ? 'Not reachable' : fmtRes(x));
+    const timingName = (k) => (k === 'dip' ? `After a ${pctN(inp.buyDrop)} fall` : TIMING_NAMES[k]);
+    // The amount in the last saving year, when it rises every year.
+    const lastYear = (x) => (inp.contribGrowth > 0 && x ? ` Rising ${pctN(inp.contribGrowth)} a year: ${fmtRes(x * Math.pow(1 + inp.contribGrowth, Math.floor((r.tTarget - 1) / 12)))} a month by Dec ${ry - 1}.` : '');
     $('#methods').innerHTML = list
       .map(([key, name, desc, m]) => {
         const hiCap = key === saferKey;
-        const hiMon = f.monthly !== null && m.now.monthly === f.monthly;
+        const hiMon = f.monthly !== null && m.plan.monthly === f.monthly;
+        const others = ['now', 'dip', 'smart'].filter((k) => k !== inp.timing);
         return `<div class="meth">
           <h3>${name}</h3>
           <p class="mdesc">${desc}</p>
@@ -1432,25 +1572,25 @@ h1, h2, h3 { text-wrap: balance; }
             <dt>Capital you need<span class="pill flag"${hiCap ? '' : ' data-off aria-hidden="true"'}>plan with this</span></dt>
             <dd><span class="fig">${fmtRes(m.capital)}</span>
               <span class="s">${fmtCompact(nominalRounded(m))} in ${ry} money at average inflation. First-year withdrawal ${pct(m.withdrawalRate, 1)}.</span></dd>
-            <dt>Invest every month<span class="pill flag"${hiMon ? '' : ' data-off aria-hidden="true"'}>plan with this</span></dt>
-            <dd><span class="fig">${mon(m.now.monthly)}</span>
-              <span class="s">${m.now.monthly === null ? 'Not reachable in time.' : `Runs out in ${pct(m.now.failRate, 1)} of futures.`}</span></dd>
-            <dt>Waiting for a ${Math.round(inp.dip.drop * 100)}% dip first</dt>
-            <dd><span class="fig sm">${mon(m.dip.monthly)}</span>
-              <span class="s">${m.dip.monthly === null || m.dip.dipHitRate === null ? '' : `The dip came within ${inp.dip.maxWaitMonths} months in ${pct(m.dip.dipHitRate)} of futures.`}</span></dd>
+            <dt>${inp.timing === 'now' ? 'Invest every month' : `Set aside every month, ${timingName(inp.timing).toLowerCase()}`}<span class="pill flag"${hiMon ? '' : ' data-off aria-hidden="true"'}>plan with this</span></dt>
+            <dd><span class="fig">${mon(m.plan.monthly)}</span>
+              <span class="s">${m.plan.monthly === null ? 'Not reachable in time.' : `Runs out in ${pct(m.plan.failRate, 1)} of futures.${lastYear(m.plan.monthly)}${m.plan.fallShare != null ? ` ${pct(m.plan.fallShare)} of it went in after a fall.` : ''}`}</span></dd>
+            ${others.map((k) => `<dt>${timingName(k)}</dt><dd><span class="fig sm">${mon(m[k].monthly)}</span></dd>`).join('')}
           </dl>
         </div>`;
       })
       .join('');
 
-    const v = list.map(([, n, , m]) => (m.now.monthly === null || m.dip.monthly === null ? null : { n, d: m.dip.monthly - m.now.monthly }));
+    // Which timing needs the least each month, per method (ties go to the simpler rule).
+    const cheapest = (m) => ['now', 'dip', 'smart'].reduce((b, k) => (m[k].monthly !== null && (m[b].monthly === null || m[k].monthly < m[b].monthly) ? k : b), 'now');
+    const same = (m) => m.now.monthly === m.dip.monthly && m.dip.monthly === m.smart.monthly;
+    const best = list.map(([, , , m]) => cheapest(m));
     let dv = '';
-    if (v.every((x) => x)) {
-      if (v.every((x) => x.d > 0)) dv = 'Starting now costs less than waiting for a dip: money parked in cash misses more growth than the dip saves.';
-      else if (v.every((x) => x.d < 0)) dv = 'Waiting for a dip costs less here: the dip usually came soon enough to pay for the time in cash.';
-      else if (v.every((x) => x.d === 0)) dv = 'Waiting for a dip makes no difference to the monthly amount here.';
-      else dv = 'The methods disagree on waiting for a dip. ' + v.map((x) => `${x.n}: ${x.d > 0 ? 'starting now is cheaper' : x.d < 0 ? 'waiting is cheaper' : 'no difference'}`).join('. ') + '.';
-    }
+    if (list.every(([, , , m]) => same(m))) dv = 'All three timings need the same monthly amount here.';
+    else if (best[0] === best[1]) dv = `${timingName(best[0])} needs the least each month in both methods.`;
+    else dv = `The methods disagree on timing: ${list.map(([, n], i) => `${n}, ${timingName(best[i]).toLowerCase()}`).join('; ')} needs the least.`;
+    const sm = r.smart;
+    dv += ` More after red months invests ${pct(sm.up)} of the month's amount after a month in which stocks fell and ${pct(sm.down)} after one in which they rose: stocks fell in ${pct(sm.red)} of the history's months, so the two average 100%.`;
     $('#dipVerdict').textContent = dv;
 
     // When you'd retire.
@@ -1459,13 +1599,13 @@ h1, h2, h3 { text-wrap: balance; }
     const col = (i) => cols[Math.min(i, cols.length - 1)];
     $('#retireNote').textContent =
       k > 0
-        ? `Share of futures, investing the monthly amount from now. You keep investing while short of the capital, for up to ${k} more year${k > 1 ? 's' : ''}.`
+        ? `Share of futures, with your monthly amount and timing. You keep investing while short of the capital, for up to ${k} more year${k > 1 ? 's' : ''}.`
         : 'You retire in your target year in every future.';
     $('#retireBars').innerHTML = list
       .map(([, n, , m]) =>
-        m.now.monthly === null
+        m.plan.monthly === null
           ? ''
-          : `<div class="stackrow"><span class="lbl">${n}</span><div class="stackbar" role="img" aria-label="${n}: ${m.now.retireDist.map((s, i) => `${pct(s)} in ${ry + i}`).join(', ')}">${m.now.retireDist
+          : `<div class="stackrow"><span class="lbl">${n}</span><div class="stackbar" role="img" aria-label="${n}: ${m.plan.retireDist.map((s, i) => `${pct(s)} in ${ry + i}`).join(', ')}">${m.plan.retireDist
               .map((s, i) => (s > 0 ? `<span style="width:${s * 100}%;background:${col(i)}" title="January ${ry + i}: ${pct(s)}"></span>` : ''))
               .join('')}</div></div>`,
       )
@@ -1473,7 +1613,7 @@ h1, h2, h3 { text-wrap: balance; }
     let rows = '';
     for (let i = 0; i <= k; i++) {
       const label = `Jan ${ry + i}${i === 0 ? ', on time' : i === k ? ', latest' : ''}`;
-      rows += `<tr><th><span class="key" style="background:${col(i)}"></span>${label}</th>${list.map(([, , , m]) => `<td>${m.now.monthly === null ? '–' : pct(m.now.retireDist[i])}</td>`).join('')}</tr>`;
+      rows += `<tr><th><span class="key" style="background:${col(i)}"></span>${label}</th>${list.map(([, , , m]) => `<td>${m.plan.monthly === null ? '–' : pct(m.plan.retireDist[i])}</td>`).join('')}</tr>`;
     }
     $('#retireTable').innerHTML = `<thead><tr><th></th><th>Monte Carlo</th><th>Block</th></tr></thead><tbody>${rows}</tbody>`;
 
@@ -1826,10 +1966,11 @@ h1, h2, h3 { text-wrap: balance; }
     };
   }
 
+  let initialSnap = null; // the form as first built: fills fields an older saved plan lacks
   function restore(s) {
     $('#country').value = s.vals.country;
     applyCountry();
-    Object.entries(s.vals).forEach(([k, v]) => {
+    Object.entries({ ...initialSnap.vals, ...s.vals }).forEach(([k, v]) => {
       if (k.startsWith('r:')) {
         const el = $(`#plan input[name="${k.slice(2)}"][value="${v}"]`);
         if (el) el.checked = true;
@@ -1868,10 +2009,14 @@ h1, h2, h3 { text-wrap: balance; }
       capital: m.capital,
       capitalNominal: m.capitalNominal,
       withdrawalRate: m.withdrawalRate,
-      now: { monthly: m.now.monthly, failRate: m.now.failRate, retireDist: m.now.retireDist },
-      dip: { monthly: m.dip.monthly, dipHitRate: m.dip.dipHitRate },
+      plan: { monthly: m.plan.monthly, failRate: m.plan.failRate, retireDist: m.plan.retireDist },
+      now: { monthly: m.now.monthly },
+      dip: { monthly: m.dip.monthly, fallShare: m.dip.fallShare },
+      smart: { monthly: m.smart.monthly },
     };
   }
+  // Plans saved before timings existed keep their answer in `now`.
+  const chosen = (m) => m.plan || m.now;
 
   function savePlan(name) {
     if (!last || stale) return;
@@ -1941,7 +2086,11 @@ h1, h2, h3 { text-wrap: balance; }
       ['Home', i.housing.kind === 'owned' ? 'paid off' : `${i.housing.kind}, ${c(i.housing.payment)}`],
       ['Children', String(i.children.length)],
       ['Already invested', c(i.existing)],
-      ['Split US/World/Corp/Gov/Metals', alloc],
+      ['Portfolio', i.single ? `${pctN(i.single.growth)} growth, ${pctN(i.single.vol)} volatility` : 'by asset'],
+      ['Split US/World/Corp/Gov/Metals', i.single ? '–' : alloc],
+      ['When money goes in', i.timing === 'dip' ? `after a ${pctN(i.buyDrop)} fall` : (TIMING_NAMES[i.timing] || TIMING_NAMES.now).toLowerCase()],
+      ['New money buys', i.buyMode === 'rebal' ? 'what has fallen behind' : i.buyMode === 'split' ? 'by the split' : 'rebalanced monthly (older version)'],
+      ['Raise every year', pctN(i.contribGrowth || 0)],
       ['Inflation', pct(i.inflation, 1)],
       ['Tax on stock gains', pct(i.taxes.equity, 1)],
       ['Cash buffer', `${i.cash.months} months at ${pct(i.cash.rate, 1)}`],
@@ -1962,8 +2111,8 @@ h1, h2, h3 { text-wrap: balance; }
       ['Invest every month', (p) => p.res.monthly],
       ['Monte Carlo capital', (p) => p.res.mc.capital],
       ['Block Monte Carlo capital', (p) => p.res.block.capital],
-      ['Monte Carlo monthly', (p) => p.res.mc.now.monthly],
-      ['Block Monte Carlo monthly', (p) => p.res.block.now.monthly],
+      ['Monte Carlo monthly', (p) => chosen(p.res.mc).monthly],
+      ['Block Monte Carlo monthly', (p) => chosen(p.res.block).monthly],
     ];
     const body = rows
       .map(([l, g]) => {
@@ -1975,7 +2124,7 @@ h1, h2, h3 { text-wrap: balance; }
         return `<tr><th>${l}</th>${cell(va, a, '')}${cell(vb, b, 'b')}</tr>`;
       })
       .join('');
-    const onTime = (p) => pct(p.res.mc.now.retireDist[0]);
+    const onTime = (p) => pct(chosen(p.res.mc).retireDist[0]);
     const da = describe(a);
     const db = describe(b);
     const diffs = da.map(([l, v], i) => [l, v, db[i][1]]).filter(([, x, y]) => x !== y);
@@ -1995,6 +2144,83 @@ h1, h2, h3 { text-wrap: balance; }
     $('.grp-h', grp).setAttribute('aria-expanded', String(want));
   }
 
+  // ---------- guided setup ----------
+  // Minimal's questions one at a time, using the plan's own fields; then Minimal with results.
+  let gStep = 0; // position in guideSteps()
+  const guided = () => document.body.hasAttribute('data-guided');
+  const guideSteps = () => GUIDE.map((_, n) => n).filter((n) => n && !(n === 9 && radio('pmode') === 'single'));
+  const stepOf = (id) => {
+    const el = id && $('#' + id);
+    const s = el && el.closest('[data-step]');
+    return s ? Number(s.dataset.step) : -1;
+  };
+
+  function showStep(focus = true) {
+    const steps = guideSteps();
+    gStep = Math.max(0, Math.min(gStep, steps.length - 1));
+    const n = String(steps[gStep]);
+    $$('#plan [data-step]').forEach((el) => el.toggleAttribute('data-now', el.dataset.step === n));
+    $$('#plan .grp').forEach((g) => g.toggleAttribute('data-now', !!$('[data-now]', g)));
+    $('#gStep').textContent = `Step ${gStep + 1} of ${steps.length}`;
+    $('#gBar').style.width = ((gStep + 1) / steps.length) * 100 + '%';
+    $('#gQ').textContent = GUIDE[n];
+    $('#gBack').disabled = gStep === 0;
+    $('#gNext').textContent = gStep === steps.length - 1 ? 'See my plan' : 'Next';
+    if (focus) $('#gQ').focus({ preventScroll: true });
+  }
+
+  function startGuide() {
+    $('input[name="mode"][value="min"]').checked = true;
+    document.body.setAttribute('data-guided', '');
+    $('#guideHead').hidden = false;
+    $('#guideNav').hidden = false;
+    gStep = 0;
+    clearFieldErrors();
+    updateLive();
+    showStep();
+    window.scrollTo(0, 0);
+  }
+
+  function endGuide() {
+    document.body.removeAttribute('data-guided');
+    $('#guideHead').hidden = true;
+    $('#guideNav').hidden = true;
+    $$('#plan [data-now]').forEach((el) => el.removeAttribute('data-now'));
+    store.set(MODE_KEY, mode());
+    updateLive();
+    if (last) {
+      drawFan();
+      drawStress(false);
+    }
+  }
+
+  // An error on this step or an earlier one stops here; on the last step, any error does.
+  function guideNext() {
+    const steps = guideSteps();
+    try {
+      readInputs();
+    } catch (e) {
+      const at = steps.indexOf(stepOf(e.field));
+      if (at >= 0 && (at <= gStep || gStep === steps.length - 1)) {
+        gStep = at;
+        showStep();
+        showError(e);
+        return;
+      }
+    }
+    clearFieldErrors();
+    if (gStep < steps.length - 1) {
+      gStep++;
+      showStep();
+    } else finishGuide();
+  }
+
+  async function finishGuide() {
+    endGuide();
+    first = false;
+    if (await run()) $('#results').scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
+  }
+
   // ---------- wire up ----------
   function init() {
     buildSelects();
@@ -2008,14 +2234,16 @@ h1, h2, h3 { text-wrap: balance; }
     });
     $('#country').value = 'IT';
     applyCountry();
-    const savedMode = store.get(MODE_KEY, 'min');
+    const savedMode = store.get(MODE_KEY, null);
     $(`input[name="mode"][value="${savedMode === 'full' ? 'full' : 'min'}"]`).checked = true;
     showHistoryStats();
     updateLive();
+    initialSnap = snapshot();
 
     const form = $('#plan');
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (guided()) return guideNext(); // Enter in a field moves on
       first = false;
       const ok = await run();
       if (ok && matchMedia('(max-width: 1039px)').matches) $('#results').scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' });
@@ -2043,14 +2271,25 @@ h1, h2, h3 { text-wrap: balance; }
       } else if (el.id === 'mSpend') el.value = fmtInput(spendingTotals().essentials + spendingTotals().extras);
       else if (el.dataset && el.dataset.fmt === 'money' && Number.isFinite(val(el))) el.value = fmtInput(val(el));
       onChange();
+      if (el.name === 'pmode' && guided()) showStep(false); // one step fewer or more
     });
     $$('input[name="mode"]').forEach((el) =>
       el.addEventListener('change', () => {
         store.set(MODE_KEY, mode());
         clearFieldErrors();
+        if (guided()) endGuide();
         onChange();
+        if (!last && !running) run();
       }),
     );
+    $('#guideBtn').addEventListener('click', startGuide);
+    $('#gNext').addEventListener('click', guideNext);
+    $('#gSkip').addEventListener('click', finishGuide);
+    $('#gBack').addEventListener('click', () => {
+      clearFieldErrors();
+      gStep--;
+      showStep();
+    });
     $$('.grp-h').forEach((h) => h.addEventListener('click', () => toggleGroup(h.closest('.grp'))));
     $('#spendTable').addEventListener('click', (e) => {
       const t = e.target.closest('.tag');
@@ -2147,7 +2386,9 @@ h1, h2, h3 { text-wrap: balance; }
     if (window.ResizeObserver) new ResizeObserver(fit).observe(sb);
     fit();
     renderPlans();
-    run();
+    // First visit: the guided setup, and no example run behind it.
+    if (savedMode === null) startGuide();
+    else run();
   }
   init();
 })();

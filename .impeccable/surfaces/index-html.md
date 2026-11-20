@@ -15,7 +15,7 @@ Public savers planning early retirement through a monthly PAC, often on a phone.
 
 ## Constraints
 
-Static page, artifact host rules (Google Fonts, allow-listed CDNs, no downloads), browser storage for saved plans only (try/catch). Dark only, chosen by the owner on 2026-10-12. Minimal is the default mode.
+Static page, artifact host rules (Google Fonts, allow-listed CDNs, no downloads), browser storage for saved plans only (try/catch). Dark only, chosen by the owner on 2026-10-12. A first visit opens the guided setup (added 2026-11-20), then Minimal.
 
 ## Direction contract
 

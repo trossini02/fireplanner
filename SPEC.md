@@ -36,8 +36,9 @@ is answered by comparing both.
   Data are USD-based (US stocks, global stocks, US 10y Treasury, US Baa corporate,
   precious metals = 50% World Bank gold price + 50% World Bank precious-metals index,
   rebalanced monthly) deflated by US CPI; currency moves not modelled.
-- Both: portfolio rebalanced monthly to the chosen allocation; nominal return =
-  (1 + real) × (1 + that month's inflation) − 1. The higher of the two answers is
+- Both: nominal return = (1 + real) × (1 + that month's inflation) − 1. While saving, each
+  asset is held on its own and nothing is sold (see "Buying while saving"); from retirement the
+  portfolio is rebalanced monthly to the chosen allocation (the first return to it is untaxed). The higher of the two answers is
   flagged as the safer number to plan with.
 - **Random inflation** (added 2026-10-12): every scenario has its own price level.
   Monte Carlo: the annual rate pulls back toward its centre by 3% of the gap each
@@ -49,10 +50,25 @@ is answered by comparing both.
 
 ## Rules
 
-- **Start now vs at a discount**: the second run keeps new contributions in cash
-  (at the cash rate, after tax) until stocks are 10% below their running peak
-  (today counts as a peak), giving up after 24 months; existing investments stay
-  invested. Both M\* are shown and the cheaper one is named.
+- **When the money goes in** (changed 2026-11-20, replaces "start now vs at a discount"): M\* is
+  found for three timings and the chosen one is the answer; the other two are shown and the
+  cheapest is named. Every rule only reacts to the month just ended (stock index, nominal).
+  *Every month*: each month's amount is invested at the end of the month. *After a fall*: savings
+  wait in cash (cash rate, after tax) and all of it is invested after a month in which stocks fell
+  by the chosen share (default 5%), or after the maximum wait (default 24 months); repeats.
+  *More after red months*: invests 150% of the month's amount after a red month and d% after a
+  green one, d set so that the two average 100% given the share of red months in the replayed
+  history (one pair for both methods); the part not invested waits in cash, and a red month can
+  only invest what is in cash. Cash left at retirement joins the portfolio.
+- **Buying while saving** (added 2026-11-20): existing investments start at the split. New money
+  buys by the split, or (*what has fallen behind*) goes to the assets below their share of the new
+  total in proportion to the gap, which lands exactly on the split when the amount is large enough.
+- **Yearly raise** (added 2026-11-20): the monthly amount in plan year y (12 months from the first
+  month) is M × (1 + raise)^y; M\* is the first year's amount.
+- **One average and volatility** (added 2026-11-20): instead of the 5-asset split and correlations,
+  one compound real growth and volatility. Monte Carlo draws one log-normal asset; block Monte
+  Carlo replays the standard split's monthly history with its log returns shifted and scaled to
+  that growth and volatility. Taxed at the stock-gains rate; no Minimal haircut.
 - **Retirement cash bucket**: 6 months of spending in cash at 2.5% (after tax).
   Topped up to 6 months only in the 4 chosen sell months (default Apr, Jul, Nov,
   Dec) and skipped while stocks are ≥10% below peak. If cash would not cover next
@@ -65,7 +81,8 @@ is answered by comparing both.
   payments are fixed in nominal terms; the PAC is a fixed nominal amount. The capital
   check for the flexible date compares wealth with C\* in that scenario's money.
 - **Minimal mode** (added 2026-10-12): asks only country, age, retirement year,
-  monthly spending (lifestyle chips or one number), home and existing investments.
+  monthly spending (lifestyle chips or one number), home, existing investments and (since
+  2026-11-20) how you invest: portfolio description, timing, buying rule and yearly raise.
   Fixed, slightly cautious: split 30/40/10/15/5 (US/World/Corp/Gov/Metals), Monte
   Carlo growth 0.5 points below Complete's defaults and history 0.5 points a year
   lower, inflation 0.5 points above the country's (random as above), cash 6 months
@@ -76,6 +93,9 @@ is answered by comparing both.
   returns and inflation that followed (no history haircut), until the data or the
   plan end. Sell months follow the real calendar. Shows money in today's money month
   by month, the low point, and when it runs out if it does.
+- **Guided setup** (added 2026-11-20): Minimal's questions one per page, with Back/Next and the
+  field checks of Calculate; at the end it switches to Minimal and calculates. Opens on a first
+  visit (no remembered mode) without running the example plan.
 - **Saved plans** (added 2026-10-12): inputs and results saved in the visitor's
   browser storage only; any two can be compared side by side, with the inputs that
   differ.
@@ -89,8 +109,9 @@ an editable table split into essentials vs extras, FIRE type (Lean = essentials;
 Regular = all; Fat = all +25%; Barista = all minus part-time income until an age),
 home (paid / mortgage payment + paid-off year / rent), children (birth year +
 monthly cost until independent, default 25), existing investments, allocation
-and assumptions for the 5 assets, cash months/rate, sell months, dip threshold,
-max wait, max delay years, block length.
+and assumptions for the 5 assets (or one growth and volatility), timing (every month / after a
+fall of X% / more after red months), buying rule (by split / what has fallen behind), yearly raise,
+cash months/rate, sell months, dip threshold, max wait, max delay years, block length.
 
 Money fields still at their default are re-derived when currency or country
 change; fields the user edited are left alone.
@@ -98,8 +119,8 @@ change; fields the user edited are left alone.
 ## Outputs
 
 Per method: C\* (today's money and retirement-year money), first-year withdrawal
-rate, M\* starting now and waiting for a dip, share retiring on time / +1 / +2 / +3
-years, chance the dip came within the max wait; spending breakdown at retirement;
+rate, M\* for the chosen timing and the other two, share retiring on time / +1 / +2 / +3
+years, share of the money invested after a fall; spending breakdown at retirement;
 fan chart (10th–90th percentile, median) of wealth in today's money by age for the
 selected method.
 
