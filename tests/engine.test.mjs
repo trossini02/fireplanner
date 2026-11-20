@@ -287,10 +287,9 @@ test('random inflation keeps its long-run average and varies between scenarios',
   const inp = flatInput({ paths: 2000, inflation: 0.02, inflationRisk: { spread: 0.015, spikeYears: 15 } });
   const tl = E.buildTimeline(inp, NOW);
   const S = E.generateParametric(inp, tl);
-  // Returns are zero, so each month's portfolio return is that month's inflation.
   let s = 0;
-  for (let i = 0; i < S.port.length; i++) s += Math.log(1 + S.port[i]);
-  const avg = Math.exp((s / S.port.length) * 12) - 1;
+  for (let p = 0; p < S.N; p++) s += Math.log(S.pl[p * (S.T + 1) + S.T]);
+  const avg = Math.exp((s / (S.N * S.T)) * 12) - 1;
   assert.ok(Math.abs(avg - 0.02) < 0.003, `average ${avg}`);
   const ends = Array.from({ length: S.N }, (_, p) => S.pl[p * (S.T + 1) + S.T]).sort((a, b) => a - b);
   assert.ok(ends[Math.floor(S.N * 0.9)] / ends[Math.floor(S.N * 0.1)] > 1.1, 'price levels should spread out');
@@ -299,7 +298,7 @@ test('random inflation keeps its long-run average and varies between scenarios',
   for (let p = 0; p < 5; p++) assert.ok(Math.abs(fixed.pl[p * (S.T + 1) + S.T] - tl.pl[S.T]) < 1e-9);
 });
 
-test('random inflation leaves the drawn returns unchanged', () => {
+test('random inflation leaves the drawn returns (before inflation) unchanged', () => {
   const base = flatInput({
     paths: 50,
     returns: { usStocks: 0.05, worldStocks: 0, corpBonds: 0, govBonds: 0, metals: 0 },
@@ -308,12 +307,16 @@ test('random inflation leaves the drawn returns unchanged', () => {
   const tl = E.buildTimeline(base, NOW);
   const a = E.generateParametric(base, tl);
   const b = E.generateParametric({ ...base, inflationRisk: { spread: 0.02, spikeYears: 10 } }, tl);
-  for (let p = 0; p < 50; p++)
-    for (let t = 0; t < tl.T; t++) {
-      const pi = b.pl[p * (tl.T + 1) + t + 1] / b.pl[p * (tl.T + 1) + t] - 1;
-      const real = (1 + b.port[p * tl.T + t]) / (1 + pi) - 1;
-      assert.ok(Math.abs(real - a.port[p * tl.T + t]) < 1e-5);
-    }
+  for (let i = 0; i < a.port.length; i++) assert.ok(Math.abs(b.port[i] - a.port[i]) < 1e-5);
+});
+
+test('returns are before inflation: returns equal to inflation keep money at its value', async () => {
+  // 2% returns with 2% inflation need the same capital, in today's money, as neither.
+  const r = await E.analyze(flatInput({ inflation: 0.02, returns: { usStocks: 0.02, worldStocks: 0, corpBonds: 0, govBonds: 0, metals: 0 } }), NOW, null);
+  assert.equal(r.methods.mc.capital, 140000);
+  // The same 2% with 5% inflation loses value every year, so it needs more.
+  const hot = await E.analyze(flatInput({ inflation: 0.05, returns: { usStocks: 0.02, worldStocks: 0, corpBonds: 0, govBonds: 0, metals: 0 } }), NOW, null);
+  assert.ok(hot.methods.mc.capital > 140000, `${hot.methods.mc.capital}`);
 });
 
 test('block bootstrap replays historical inflation moved to the chosen average', () => {
@@ -333,9 +336,11 @@ test('block bootstrap replays historical inflation moved to the chosen average',
 
 test('a fixed nominal PAC buys less when inflation runs hot', async () => {
   // Ten years of PAC: money already invested keeps pace with inflation, later instalments do not.
-  const inp = flatInput({ inflation: 0.03, retireYear: 2037, endAge: 80, units: { capital: 1000, monthly: 100 } });
+  // Returns match inflation in both, so they are worth the same after it.
+  const ret = (x) => ({ usStocks: x, worldStocks: 0, corpBonds: 0, govBonds: 0, metals: 0 });
+  const inp = flatInput({ inflation: 0.03, returns: ret(0.03), retireYear: 2037, endAge: 80, units: { capital: 1000, monthly: 100 } });
   const calm = await E.analyze(inp, NOW, null);
-  const hot = await E.analyze({ ...inp, inflation: 0.08 }, NOW, null);
+  const hot = await E.analyze({ ...inp, inflation: 0.08, returns: ret(0.08) }, NOW, null);
   // Capital rises a little too (the cash buffer earns 0% here), but the PAC rises faster:
   // the same target in today's money costs more nominal euros by the retirement date.
   const ratio = (r) => r.methods.mc.now.monthly / r.methods.mc.capital;
@@ -486,7 +491,11 @@ test('one-number portfolio: history keeps its months, moved to the chosen growth
   const x = hist.real.usStocks.map((v) => Math.log(1 + v));
   const m = x.reduce((s, v) => s + v, 0) / x.length;
   const sd = Math.sqrt(x.reduce((s, v) => s + (v - m) ** 2, 0) / x.length);
-  assert.ok(Math.abs(Math.exp(m * 12) - 1.05) < 1e-9);
+  assert.ok(Math.abs(Math.exp(m * 12) - 1.05) < 1e-9); // inflation 0 here
+  // With inflation, history (after inflation) is moved to the return less the inflation.
+  const [, hist2] = E.asSingle({ ...inp, inflation: 0.025 }, H);
+  const m2 = hist2.real.usStocks.reduce((s, v) => s + Math.log(1 + v), 0) / H.months;
+  assert.ok(Math.abs(Math.exp(m2 * 12) - 1.05 / 1.025) < 1e-9);
   assert.ok(Math.abs(sd * Math.sqrt(12) - 0.12) < 1e-9);
   // The worst month of the mix stays the worst month.
   const mix = H.real.usStocks.map((_, h) => 0.3 * H.real.usStocks[h] + 0.4 * H.real.worldStocks[h] + 0.1 * H.real.corpBonds[h] + 0.15 * H.real.govBonds[h] + 0.05 * H.real.metals[h]);

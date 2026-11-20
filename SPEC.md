@@ -29,13 +29,17 @@ is answered by comparing both.
 
 ## Methods (2,000 scenarios each, fixed seeds → same inputs, same answer)
 
-- **Monte Carlo**: monthly log-normal real returns for 5 assets with editable
-  long-run real growth, volatility and a correlation matrix.
+- **Monte Carlo**: monthly log-normal returns for 5 assets with editable long-run
+  return, volatility and a correlation matrix. Since 2026-11-20 returns are entered before
+  inflation (nominal; defaults 7.5 / 7 / 4 / 3.5 / 4%) and each month's draw is divided by
+  (1 + that month's inflation), so inflation surprises lower real returns.
 - **Block Monte Carlo**: circular block bootstrap of real monthly returns of the 5
   asset classes over the common historical window (blocks of 5 years by default).
   Data are USD-based (US stocks, global stocks, US 10y Treasury, US Baa corporate,
   precious metals = 50% World Bank gold price + 50% World Bank precious-metals index,
   rebalanced monthly) deflated by US CPI; currency moves not modelled.
+- **Inflation** is a separate input, 2.5% a year by default for every country (changed
+  2026-11-20 from per-country values), editable in every mode including Minimal and Guided.
 - Both: nominal return = (1 + real) × (1 + that month's inflation) − 1. While saving, each
   asset is held on its own and nothing is sold (see "Buying while saving"); from retirement the
   portfolio is rebalanced monthly to the chosen allocation (the first return to it is untaxed). The higher of the two answers is
@@ -45,7 +49,7 @@ is answered by comparing both.
   month, with noise sized to the chosen spread (default 1.5 points) and a +5 point
   spike on average every N years (default 15) that fades the same way; the centre is
   set so the long-run average equals the user's inflation. It uses its own random
-  stream, so the drawn returns do not change. Block Monte Carlo replays US CPI in the
+  stream, so the drawn returns (before inflation) do not change. Block Monte Carlo replays US CPI in the
   same blocks as the returns, moved so its average equals the user's inflation.
 
 ## Rules
@@ -66,9 +70,11 @@ is answered by comparing both.
 - **Yearly raise** (added 2026-11-20): the monthly amount in plan year y (12 months from the first
   month) is M × (1 + raise)^y; M\* is the first year's amount.
 - **One average and volatility** (added 2026-11-20): instead of the 5-asset split and correlations,
-  one compound real growth and volatility. Monte Carlo draws one log-normal asset; block Monte
+  one compound return (before inflation) and volatility. Monte Carlo draws one log-normal asset;
+  block Monte
   Carlo replays the standard split's monthly history with its log returns shifted and scaled to
-  that growth and volatility. Taxed at the stock-gains rate; no Minimal haircut.
+  that return less the average inflation, and that volatility. Taxed at the stock-gains rate;
+  no Minimal haircut.
 - **Retirement cash bucket**: 6 months of spending in cash at 2.5% (after tax).
   Topped up to 6 months only in the 4 chosen sell months (default Apr, Jul, Nov,
   Dec) and skipped while stocks are ≥10% below peak. If cash would not cover next
@@ -84,8 +90,9 @@ is answered by comparing both.
   monthly spending (lifestyle chips or one number), home, existing investments and (since
   2026-11-20) how you invest: portfolio description, timing, buying rule and yearly raise.
   Fixed, slightly cautious: split 30/40/10/15/5 (US/World/Corp/Gov/Metals), Monte
-  Carlo growth 0.5 points below Complete's defaults and history 0.5 points a year
-  lower, inflation 0.5 points above the country's (random as above), cash 6 months
+  Carlo returns 0.5 points below Complete's defaults and history 0.5 points a year
+  lower, inflation as entered (random as above; the +0.5 point margin was dropped on
+  2026-11-20 when inflation became an input), cash 6 months
   at 2%, until 95, 5% failure, sell months Apr/Jul/Nov/Dec, dip 10% / 24 months, up
   to 3 extra years, Regular FIRE, no children, taxes from the country.
 - **Historical stress test** (added 2026-10-12): retire at a real month since July
@@ -102,14 +109,14 @@ is answered by comparing both.
 
 ## Inputs
 
-Currency, country (pre-fills inflation, taxes, cost-of-living for presets; all
+Currency, inflation (2.5% default), country (pre-fills taxes and cost-of-living for presets; all
 editable), age, retirement year, plan-until age, accepted failure %, lifestyle
 preset (Frugal/Moderate/Comfortable/Lavish × cost index × FX, 1–2 adults) filling
 an editable table split into essentials vs extras, FIRE type (Lean = essentials;
 Regular = all; Fat = all +25%; Barista = all minus part-time income until an age),
 home (paid / mortgage payment + paid-off year / rent), children (birth year +
 monthly cost until independent, default 25), existing investments, allocation
-and assumptions for the 5 assets (or one growth and volatility), timing (every month / after a
+and assumptions for the 5 assets (or one return and volatility, all before inflation), timing (every month / after a
 fall of X% / more after red months), buying rule (by split / what has fallen behind), yearly raise,
 cash months/rate, sell months, dip threshold, max wait, max delay years, block length.
 

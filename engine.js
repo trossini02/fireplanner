@@ -193,10 +193,11 @@
   // The longest possible saving phase: up to January of the last allowed retirement year.
   const saveMonths = (tl) => Math.min(tl.T, tl.tTarget + 12 * tl.maxDelay);
 
-  /* One-number portfolio (`inp.single` = {growth, vol}): a single asset with that growth and
-   * volatility, taxed as stocks. History keeps the months of `inp.alloc` (the standard split)
-   * with their log returns moved and scaled to that growth and volatility, so crashes come at
-   * the same times, sized to the visitor's numbers. Returns [inp, history] for the engine. */
+  /* One-number portfolio (`inp.single` = {growth, vol}, yearly, before inflation): a single
+   * asset with that return and volatility, taxed as stocks. History keeps the months of
+   * `inp.alloc` (the standard split) with their real log returns moved and scaled to the same
+   * return less the average inflation, so crashes come at the same times, sized to the
+   * visitor's numbers. Returns [inp, history] for the engine. */
   function asSingle(inp, history) {
     if (!inp.single) return [inp, history];
     const { growth, vol } = inp.single;
@@ -212,7 +213,7 @@
     for (const v of x) s2 += (v - m) * (v - m);
     const sd = Math.sqrt(s2 / H);
     const k = sd > 0 ? vol / Math.sqrt(12) / sd : 0;
-    const mu = Math.log(1 + growth) / 12;
+    const mu = Math.log((1 + growth) / (1 + inp.inflation)) / 12;
     const zeros = new Array(H).fill(0);
     const real = { usStocks: Array.from(x, (v) => Math.exp(mu + (v - m) * k) - 1), worldStocks: zeros, corpBonds: zeros, govBonds: zeros, metals: zeros };
     return [out, { ...history, real }];
@@ -326,6 +327,9 @@
     };
   }
 
+  /* Monte Carlo: `returns` and `vols` are yearly, before inflation (nominal). Each month's draw
+   * has that month's inflation taken off, so inflation is its own thing: when it runs hot, the
+   * same returns are worth less. */
   function generateParametric(inp, tl) {
     checkAlloc(inp);
     const N = inp.paths;
@@ -342,13 +346,14 @@
       sink.startPath(p);
       infl.start();
       for (let t = 0; t < T; t++) {
+        const pi = infl.next();
         for (let k = 0; k < 5; k++) eps[k] = gauss();
         for (let i = 0; i < 5; i++) {
           let z = 0;
           for (let j = 0; j <= i; j++) z += L[i][j] * eps[j];
-          r[i] = Math.exp(mu[i] + sd[i] * z) - 1;
+          r[i] = Math.exp(mu[i] + sd[i] * z) / (1 + pi) - 1;
         }
-        sink.put(p, t, r, infl.next());
+        sink.put(p, t, r, pi);
       }
     }
     return sink.paths;

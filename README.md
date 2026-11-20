@@ -8,8 +8,9 @@ early retirement (FIRE). It answers two questions:
 
 Each answer is computed twice, side by side, on 2,000 futures each:
 
-- **Monte Carlo** draws random monthly returns from growth, volatility and correlation
-  assumptions you can edit.
+- **Monte Carlo** draws random monthly returns from return, volatility and correlation
+  assumptions you can edit. Returns are before inflation; inflation is its own input
+  (2.5% a year unless you change it) and the planner takes it off.
 - **Block Monte Carlo** stitches together blocks of real monthly market history
   (July 1990 to September 2025).
 
@@ -28,7 +29,7 @@ browser's own storage.
   All three are calculated side by side.
 - Nothing sold while saving: new money buys by your split, or goes to what has fallen behind it.
 - A monthly amount that rises by a chosen percentage every year.
-- Describe your investments by asset split and correlations, or by one average growth and volatility.
+- Describe your investments by asset split and correlations, or by one average return and volatility.
 - Taxes on gains by country, plus yearly wealth or stamp taxes.
 - Inflation that varies over time, with occasional spikes.
 - Lean, Regular, Fat and Barista FIRE, a mortgage or rent, and children.

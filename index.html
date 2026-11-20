@@ -572,16 +572,18 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
               </div>
               <p class="subnote" id="pmodeNote"></p>
               <div id="singleFields" class="chips" hidden>
-                <div class="row"><label for="pGrowth">Average growth a year<span class="hint">Compound, after inflation.</span></label>
-                  <div class="field"><input id="pGrowth" type="text" inputmode="decimal" step="any" value="3.5"><span class="u">%</span></div></div>
+                <div class="row"><label for="pGrowth">Average return a year<span class="hint">Compound, before inflation.</span></label>
+                  <div class="field"><input id="pGrowth" type="text" inputmode="decimal" step="any" value="6"><span class="u">%</span></div></div>
                 <div class="row"><label for="pVol">Volatility a year<span class="hint">Standard deviation of yearly returns.</span></label>
                   <div class="field"><input id="pVol" type="text" inputmode="decimal" step="any" value="11"><span class="u">%</span></div></div>
               </div>
             </div>
-            <p class="subnote by-asset" data-full>Your split, and what you expect each asset to do. Growth is yearly and after inflation. The last column shows what <span class="histspan">history</span> delivered (used by block Monte Carlo).</p>
+            <div class="row" data-step="8"><label for="inflation">Inflation a year<span class="hint">Long-run average. Returns are before it; the planner takes it off.</span></label>
+              <div class="field"><input id="inflation" type="text" inputmode="decimal" step="any" value="2.5"><span class="u">%/yr</span></div></div>
+            <p class="subnote by-asset" data-full>Your split, and what you expect each asset to do. Returns are yearly and before inflation. The last column shows what <span class="histspan">history</span> delivered (used by block Monte Carlo).</p>
             <div class="tw by-asset" data-full>
               <table class="assets" id="assetTable">
-                <thead><tr><th>Asset</th><th>Split</th><th>Growth</th><th>Volatility</th><th class="histspan">History</th></tr></thead>
+                <thead><tr><th>Asset</th><th>Split</th><th>Return</th><th>Volatility</th><th class="histspan">History</th></tr></thead>
                 <tbody></tbody>
                 <tfoot><tr><td>Total</td><td id="allocSum" style="text-align:right" class="mono"></td><td colspan="3"></td></tr></tfoot>
               </table>
@@ -598,7 +600,7 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
         <section class="grp" data-grp="how">
           <button type="button" class="grp-h" aria-expanded="true"><b>How you invest</b></button>
           <div class="grp-b">
-            <div class="chips" data-step="8">
+            <div class="chips" data-step="9">
               <span class="lbl" id="timingLbl">When each month's money goes in</span>
               <div class="seg" role="radiogroup" aria-labelledby="timingLbl">
                 <label><input type="radio" name="timing" value="now" checked><span>Every month</span></label>
@@ -613,7 +615,7 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
                   <div class="field"><input id="maxWait" type="text" inputmode="numeric" step="1" value="24"><span class="u">months</span></div></div>
               </div>
             </div>
-            <div class="chips" data-step="9" id="buyModeBox">
+            <div class="chips" data-step="10" id="buyModeBox">
               <span class="lbl" id="buyModeLbl">New money buys</span>
               <div class="seg" role="radiogroup" aria-labelledby="buyModeLbl">
                 <label><input type="radio" name="buyMode" value="split" checked><span>By your split</span></label>
@@ -621,7 +623,7 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
               </div>
               <p class="subnote" id="buyModeNote"></p>
             </div>
-            <div class="row" data-step="10"><label for="contribGrowth">Raise the monthly amount every year by<span class="hint">0 keeps it the same. The answer is the first year's amount.</span></label>
+            <div class="row" data-step="11"><label for="contribGrowth">Raise the monthly amount every year by<span class="hint">0 keeps it the same. The answer is the first year's amount.</span></label>
               <div class="field"><input id="contribGrowth" type="text" inputmode="decimal" step="any" value="0"><span class="u">%/yr</span></div></div>
           </div>
         </section>
@@ -630,13 +632,11 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
           <button type="button" class="grp-h" aria-expanded="true"><b>Taxes and inflation</b></button>
           <div class="grp-b">
             <p class="subnote" id="countryNote"></p>
-            <div class="row"><label for="inflation">Inflation, long-run average</label>
-              <div class="field"><input id="inflation" type="text" inputmode="decimal" step="any"><span class="u">%/yr</span></div></div>
             <div class="row"><label for="inflSpread">How much it varies<span class="hint">Typical distance from the average, year to year.</span></label>
               <div class="field"><input id="inflSpread" type="text" inputmode="decimal" step="any" min="0" value="1.5"><span class="u">pts</span></div></div>
             <div class="row"><label for="inflSpike">A spike of +5 points every<span class="hint">On average. It fades over a few years. 0 means never.</span></label>
               <div class="field"><input id="inflSpike" type="text" inputmode="numeric" step="any" min="0" value="15"><span class="u">yrs</span></div></div>
-            <p class="subnote">Random inflation applies to Monte Carlo. Block Monte Carlo replays real US inflation, moved to your average.</p>
+            <p class="subnote">Inflation varies at random around your average (under Investments) in Monte Carlo. Block Monte Carlo replays real US inflation, moved to your average.</p>
             <div class="row"><label for="taxEquity">Tax on stock gains</label>
               <div class="field"><input id="taxEquity" type="text" inputmode="decimal" step="any"><span class="u">%</span></div></div>
             <div class="row"><label for="taxGov">Tax on government bonds</label>
@@ -732,7 +732,7 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
 
       <section class="panel wide stale-able" aria-labelledby="stressH" id="stressPanel">
         <div class="ph"><h2 id="stressH">Retire into real history</h2></div>
-        <p class="note">What would have happened if you had retired on a real date with the capital above, spending as in your plan. Real returns and inflation from history replace the simulations, with inflation moved to your country's average. Sell months follow the real calendar.</p>
+        <p class="note">What would have happened if you had retired on a real date with the capital above, spending as in your plan. Real returns and inflation from history replace the simulations, with inflation moved to your average. Sell months follow the real calendar.</p>
         <div class="sctl">
           <div class="line">
             <span class="lbl" id="sPresetLbl">Start</span>
@@ -785,10 +785,10 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
           <li><b>One average and volatility</b> replaces the asset split with a single investment, taxed at the stock-gains rate. Monte Carlo draws from your two numbers. Block Monte Carlo replays the standard split's history, with its ups and downs scaled to your numbers, so crashes come at the same times.</li>
           <li><b>In retirement</b> you hold a cash buffer of several months of spending. It is topped up only in your sell months, and not while stocks are in a dip. If the cash would not cover next month, just one month is sold.</li>
           <li><b>Taxes</b> are charged on the gain part of each sale, using your average purchase cost. A yearly wealth or stamp tax is taken each January, and cash interest is taxed at the "other" rate. Country rates are rough starting points checked in October 2026. Check your own situation.</li>
-          <li><b>Inflation is random.</b> In Monte Carlo it drifts around your average and sometimes spikes by 5 points, then fades. Block Monte Carlo replays real US inflation month by month, moved to your average, so 2022 comes with its bond losses. Spending follows inflation; the monthly investment and a mortgage payment stay fixed in money, so inflation erodes them.</li>
-          <li><b>Monte Carlo</b> draws random monthly returns from the growth, volatility and correlations in Complete. <b>Block Monte Carlo</b> joins random blocks of real monthly returns, after inflation, from <span id="histWindow">history</span>: US and developed-world stocks (Ken French Data Library), US 10-year Treasuries and Baa corporate bonds (rebuilt from <a href="https://fred.stlouisfed.org/" target="_blank" rel="noopener">FRED</a> yields), and precious metals, half gold and half the all-precious-metals index (<a href="https://www.worldbank.org/en/research/commodity-markets" target="_blank" rel="noopener">World Bank</a> prices).</li>
+          <li><b>Inflation is its own input</b> (2.5% a year unless you change it), and every return you enter is before inflation: the planner takes each month's inflation off. <b>Inflation is random.</b> In Monte Carlo it drifts around your average and sometimes spikes by 5 points, then fades. Block Monte Carlo replays real US inflation month by month, moved to your average, so 2022 comes with its bond losses. Spending follows inflation; the monthly investment and a mortgage payment stay fixed in money, so inflation erodes them.</li>
+          <li><b>Monte Carlo</b> draws random monthly returns, before inflation, from the returns, volatility and correlations in Complete, then takes that month's inflation off, so a year of high inflation lowers what they are worth. <b>Block Monte Carlo</b> joins random blocks of real monthly returns, after inflation, from <span id="histWindow">history</span>: US and developed-world stocks (Ken French Data Library), US 10-year Treasuries and Baa corporate bonds (rebuilt from <a href="https://fred.stlouisfed.org/" target="_blank" rel="noopener">FRED</a> yields), and precious metals, half gold and half the all-precious-metals index (<a href="https://www.worldbank.org/en/research/commodity-markets" target="_blank" rel="noopener">World Bank</a> prices).</li>
           <li><b>Limits of the history:</b> it starts in 1990, so it misses the 1970s inflation and the early-1980s bond crash. US stocks grew <span id="histUs">about 8%</span> a year above inflation and gold rallied, so the history leans optimistic. Bond series come from monthly averages, which smooths their swings. Corporate bonds ignore defaults, and the data are in US dollars, so currency moves are not included.</li>
-          <li><b>Minimal</b> fixes the settings listed in its plan panel, slightly cautious: returns half a point below Complete's (in both methods), inflation half a point above your country's, and cash at 2%. Your own average and volatility are used as you enter them. <b>Guided setup</b> asks Minimal's questions one at a time, then shows the result.</li>
+          <li><b>Minimal</b> fixes the settings listed in its plan panel, slightly cautious: returns half a point below Complete's (in both methods) and cash at 2%. Your own average and volatility are used as you enter them. <b>Guided setup</b> asks Minimal's questions one at a time, then shows the result.</li>
           <li>Not included: state pension, other income in retirement, and cutting spending in bad years. This is a planning simulation, not financial advice.</li>
         </ul>
       </section>
@@ -832,32 +832,32 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
     JPY: { fx: 177, units: { capital: 1000000, monthly: 10000 }, step: 1000 },
   };
 
-  // Rough tax and inflation starting points, researched October 2026. cost = cost of living vs Italy (Numbeo 2026, excl. rent).
+  // Rough tax starting points, researched October 2026. cost = cost of living vs Italy (Numbeo 2026, excl. rent).
   const COUNTRIES = [
-    { id: 'IT', name: 'Italy', currency: 'EUR', inflation: 2, equity: 26, gov: 12.5, other: 26, wealth: 0.2, cost: 1.0,
+    { id: 'IT', name: 'Italy', currency: 'EUR', equity: 26, gov: 12.5, other: 26, wealth: 0.2, cost: 1.0,
       note: 'Italy: 26% on gains, 12.5% on Italian and white-list government bonds (an ETF gets it only on its share of those bonds), and 0.2% a year stamp duty (imposta di bollo).' },
-    { id: 'ES', name: 'Spain', currency: 'EUR', inflation: 2, equity: 21, gov: 21, other: 21, wealth: 0, cost: 0.85,
+    { id: 'ES', name: 'Spain', currency: 'EUR', equity: 21, gov: 21, other: 21, wealth: 0, cost: 0.85,
       note: 'Spain: savings income is taxed 19% to 30% by band; 21% fits withdrawals of about €30,000 to €50,000 a year. Wealth tax only applies above €700,000 per person, and regions differ.' },
-    { id: 'PT', name: 'Portugal', currency: 'EUR', inflation: 2, equity: 28, gov: 28, other: 28, wealth: 0, cost: 0.8,
+    { id: 'PT', name: 'Portugal', currency: 'EUR', equity: 28, gov: 28, other: 28, wealth: 0, cost: 0.8,
       note: 'Portugal: a flat 28% on investment gains.' },
-    { id: 'FR', name: 'France', currency: 'EUR', inflation: 2, equity: 31.4, gov: 31.4, other: 31.4, wealth: 0, cost: 1.1,
+    { id: 'FR', name: 'France', currency: 'EUR', equity: 31.4, gov: 31.4, other: 31.4, wealth: 0, cost: 1.1,
       note: 'France: the flat tax (PFU) is 31.4% after the 2026 rise in social charges. A high-income surcharge can add up to 4%.' },
-    { id: 'DE', name: 'Germany', currency: 'EUR', inflation: 2, equity: 18.46, gov: 26.375, other: 26.375, wealth: 0, cost: 1.1,
+    { id: 'DE', name: 'Germany', currency: 'EUR', equity: 18.46, gov: 26.375, other: 26.375, wealth: 0, cost: 1.1,
       note: 'Germany: 26.375% including the solidarity surcharge. Equity funds get a 30% partial exemption, which makes 18.46%. Church tax and the €1,000 allowance are not included.' },
-    { id: 'CH', name: 'Switzerland', currency: 'CHF', inflation: 1, equity: 0, gov: 0, other: 0, wealth: 0.2, cost: 1.8,
+    { id: 'CH', name: 'Switzerland', currency: 'CHF', equity: 0, gov: 0, other: 0, wealth: 0.2, cost: 1.8,
       note: 'Switzerland: private capital gains are tax-free. Wealth tax depends on the canton; 0.2% is a rough middle value, not verified. Interest and dividends are taxed as income, which is not modelled.' },
-    { id: 'GB', name: 'United Kingdom', currency: 'GBP', inflation: 2, equity: 18, gov: 18, other: 18, wealth: 0, cost: 1.1,
+    { id: 'GB', name: 'United Kingdom', currency: 'GBP', equity: 18, gov: 18, other: 18, wealth: 0, cost: 1.1,
       note: 'United Kingdom: capital gains tax is 18% in the basic band and 24% above it. Investments inside an ISA are tax-free; set the rates to 0 if that is you.' },
-    { id: 'US', name: 'United States', currency: 'USD', inflation: 2, equity: 15, gov: 22, other: 22, wealth: 0, cost: 1.1,
+    { id: 'US', name: 'United States', currency: 'USD', equity: 15, gov: 22, other: 22, wealth: 0, cost: 1.1,
       note: 'United States: long-term gains are taxed 0%, 15% or 20%; 15% is assumed. Bond income is taxed as ordinary income (22% is an estimate). State taxes are not included.' },
-    { id: 'CA', name: 'Canada', currency: 'CAD', inflation: 2, equity: 12, gov: 25, other: 25, wealth: 0, cost: 1.05,
+    { id: 'CA', name: 'Canada', currency: 'CAD', equity: 12, gov: 25, other: 25, wealth: 0, cost: 1.05,
       note: 'Canada: half of a capital gain is taxable; 12% assumes about a 24% marginal rate. The interest rate is an estimate. Not verified.' },
-    { id: 'JP', name: 'Japan', currency: 'JPY', inflation: 2, equity: 20.315, gov: 20.315, other: 20.315, wealth: 0, cost: 0.75,
+    { id: 'JP', name: 'Japan', currency: 'JPY', equity: 20.315, gov: 20.315, other: 20.315, wealth: 0, cost: 0.75,
       note: 'Japan: 20.315% on gains and dividends. NISA accounts are tax-free.' },
-    { id: 'AU', name: 'Australia', currency: 'AUD', inflation: 2.5, equity: 8.5, gov: 17, other: 17, wealth: 0, cost: 1.1,
+    { id: 'AU', name: 'Australia', currency: 'AUD', equity: 8.5, gov: 17, other: 17, wealth: 0, cost: 1.1,
       note: 'Australia: assumes the 50% capital gains discount in the 15% band plus the Medicare levy. The May 2026 budget proposes replacing the discount from July 2027. Bond rate is an estimate.' },
     { id: 'XX', name: 'Somewhere else', currency: null,
-      note: 'Enter your own tax rates and inflation.' },
+      note: 'Enter your own tax rates.' },
   ];
 
   const CATEGORIES = [
@@ -882,18 +882,18 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
   const ADULT_FACTOR = { 1: 1, 2: 1.5 };
 
   const ASSETS = [
-    { id: 'usStocks', label: 'US stocks', w: 30, r: 5, v: 16 },
-    { id: 'worldStocks', label: 'World stocks', w: 40, r: 4.5, v: 15 },
-    { id: 'corpBonds', label: 'Corporate bonds', w: 10, r: 1.5, v: 7 },
-    { id: 'govBonds', label: 'Government bonds', w: 15, r: 1, v: 6 },
-    { id: 'metals', label: 'Precious metals', w: 5, r: 1.5, v: 15 },
+    { id: 'usStocks', label: 'US stocks', w: 30, r: 7.5, v: 16 },
+    { id: 'worldStocks', label: 'World stocks', w: 40, r: 7, v: 15 },
+    { id: 'corpBonds', label: 'Corporate bonds', w: 10, r: 4, v: 7 },
+    { id: 'govBonds', label: 'Government bonds', w: 15, r: 3.5, v: 6 },
+    { id: 'metals', label: 'Precious metals', w: 5, r: 4, v: 15 },
   ];
   const SHORT = ['US', 'World', 'Corp', 'Gov', 'Metals'];
   const HOME_BASE = { mortgage: 600, rent: 800 };
   const CHILD_BASE = 400;
 
   // Minimal: standard settings, slightly cautious next to Complete's defaults.
-  const MIN = { endAge: 95, fail: 0.05, cut: 0.005, inflAdd: 0.005, cashRate: 0.02, cashMonths: 6, sell: [3, 6, 10, 11], drop: 0.1, maxWait: 24, maxDelay: 3, block: 5, spread: 0.015, spikeYears: 15 };
+  const MIN = { endAge: 95, fail: 0.05, cut: 0.005, cashRate: 0.02, cashMonths: 6, sell: [3, 6, 10, 11], drop: 0.1, maxWait: 24, maxDelay: 3, block: 5, spread: 0.015, spikeYears: 15 };
 
   const FIRE_NOTES = {
     lean: 'Lean: only your essentials are paid for in retirement.',
@@ -922,6 +922,7 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
     'What about your home?',
     'How much have you already invested?',
     'How do you want to describe your investments?',
+    'How much inflation do you expect?',
     "When does each month's money go in?",
     "What does each month's money buy?",
     'Will you invest more every year?',
@@ -1033,7 +1034,7 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
       (a) => `<tr>
         <td>${a.label}</td>
         <td><div class="field"><input id="w-${a.id}" type="text" inputmode="decimal" step="any" value="${a.w}" aria-label="${a.label} split"><span class="u">%</span></div></td>
-        <td><div class="field"><input id="r-${a.id}" type="text" inputmode="decimal" step="any" value="${a.r}" aria-label="${a.label} growth after inflation"><span class="u">%</span></div></td>
+        <td><div class="field"><input id="r-${a.id}" type="text" inputmode="decimal" step="any" value="${a.r}" aria-label="${a.label} return before inflation"><span class="u">%</span></div></td>
         <td><div class="field"><input id="v-${a.id}" type="text" inputmode="decimal" step="any" value="${a.v}" aria-label="${a.label} volatility"><span class="u">%</span></div></td>
         <td class="hist" id="h-${a.id}">–</td>
       </tr>`,
@@ -1113,7 +1114,6 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
     $('#countryNote').textContent = c.note;
     if (c.currency) {
       $('#currency').value = c.currency;
-      $('#inflation').value = c.inflation;
       $('#taxEquity').value = c.equity;
       $('#taxGov').value = c.gov;
       $('#taxOther').value = c.other;
@@ -1155,20 +1155,19 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
 
   function minimalSettings() {
     const c = country();
-    const infl = (c.currency ? c.inflation : num('inflation') || 2) / 100 + MIN.inflAdd;
     const alloc = ASSETS.map((a) => `${a.w}%`).join(' / ');
     const split = radio('pmode') !== 'single'
       ? [
           ['Portfolio', `70% stocks, 25% bonds, 5% metals`],
           ['Split US / World / Corp / Gov / Metals', alloc],
-          ['Growth after inflation, a year', ASSETS.map((a) => (a.r - MIN.cut * 100).toFixed(1)).join(' / ') + '%'],
+          ['Return before inflation, a year', ASSETS.map((a) => (a.r - MIN.cut * 100).toFixed(1)).join(' / ') + '%'],
           ['History', 'returns 0.5 points lower'],
         ]
       : [['History', 'the standard split, scaled to your numbers']];
     return [
       ...split,
       ...(radio('timing') === 'dip' ? [['Wait for a fall at most', `${MIN.maxWait} months`]] : []),
-      ['Inflation', `${(infl * 100).toFixed(1)}% average, varies at random`],
+      ['Inflation', 'varies at random around yours'],
       ['Taxes', c.currency ? `${c.name} rates` : 'rates in Complete'],
       ['Money lasts until', `age ${MIN.endAge}`],
       ['Accepted chance of running out', pct(MIN.fail)],
@@ -1247,18 +1246,21 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
     ASSETS.forEach((a) => {
       const r = HIST.real[a.id];
       let lg = 0;
+      let lr = 0;
       let s = 0;
       let s2 = 0;
-      for (const x of r) {
-        lg += Math.log(1 + x);
-        s += x;
-        s2 += x * x;
-      }
+      r.forEach((x, h) => {
+        const y = (1 + x) * (1 + HIST.inflation[h]) - 1; // before inflation, as the inputs
+        lr += Math.log(1 + x);
+        lg += Math.log(1 + y);
+        s += y;
+        s2 += y * y;
+      });
       const n = r.length;
       const growth = Math.exp((lg / n) * 12) - 1;
       const vol = Math.sqrt((s2 / n - (s / n) ** 2) * 12);
       $('#h-' + a.id).textContent = `${(growth * 100).toFixed(1)} / ${(vol * 100).toFixed(0)}%`;
-      if (a.id === 'usStocks') $('#histUs').textContent = `${(growth * 100).toFixed(1)}%`;
+      if (a.id === 'usStocks') $('#histUs').textContent = `${((Math.exp((lr / n) * 12) - 1) * 100).toFixed(1)}%`;
     });
   }
 
@@ -1298,13 +1300,15 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
       buyMode: radio('buyMode'),
       buyDrop: need('buyDrop', 'the size of a fall') / 100,
       contribGrowth: need('contribGrowth', 'the yearly raise') / 100,
-      single: radio('pmode') === 'single' ? { growth: need('pGrowth', 'the average growth') / 100, vol: Math.max(0, need('pVol', 'the volatility')) / 100 } : null,
+      inflation: need('inflation', 'inflation') / 100,
+      single: radio('pmode') === 'single' ? { growth: need('pGrowth', 'the average return') / 100, vol: Math.max(0, need('pVol', 'the volatility')) / 100 } : null,
       paths: PATHS,
       seed: SEED,
     };
     if (common.age < 16 || common.age > 90) throw new FieldError('age', 'Enter an age between 16 and 90.');
     if (common.spending.essentials + common.spending.extras <= 0) throw new FieldError(isMin ? 'mSpend' : 'sp-groceries', 'Enter what you spend each month.');
-    if (common.single && Math.abs(common.single.growth) > 0.5) throw new FieldError('pGrowth', 'Enter a growth between −50% and 50% a year.');
+    if (common.single && Math.abs(common.single.growth) > 0.5) throw new FieldError('pGrowth', 'Enter a return between −50% and 50% a year.');
+    if (common.inflation < -0.05 || common.inflation > 0.3) throw new FieldError('inflation', 'Enter an inflation between −5% and 30% a year.');
     if (common.buyDrop <= 0 || common.buyDrop >= 1) throw new FieldError('buyDrop', 'A fall must be between 0.1% and 99%.');
     if (common.contribGrowth < 0 || common.contribGrowth > 1) throw new FieldError('contribGrowth', 'Enter a yearly raise between 0% and 100%.');
     // The standard split: Minimal's portfolio, and the history behind one average and volatility.
@@ -1326,7 +1330,6 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
         ...common,
         endAge: MIN.endAge,
         failTarget: MIN.fail,
-        inflation: (c.currency ? c.inflation : num('inflation') || 2) / 100 + MIN.inflAdd,
         inflationRisk: { spread: MIN.spread, spikeYears: MIN.spikeYears },
         historyCut: common.single ? 0 : MIN.cut,
         fireType: 'regular',
@@ -1353,7 +1356,7 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
       ASSETS.forEach((a) => {
         alloc[a.id] = (num('w-' + a.id) || 0) / 100;
         wsum += alloc[a.id];
-        returns[a.id] = need('r-' + a.id, `${a.label} growth`) / 100;
+        returns[a.id] = need('r-' + a.id, `${a.label} return`) / 100;
         vols[a.id] = Math.max(0, need('v-' + a.id, `${a.label} volatility`)) / 100;
       });
       if (Math.abs(wsum - 1) > 0.0005) throw new FieldError('w-usStocks', `Your portfolio split adds up to ${(wsum * 100).toFixed(1)}%. Make it 100%.`);
@@ -1367,7 +1370,6 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
       ...common,
       endAge: need('endAge', 'plan until age'),
       failTarget: need('failPct', 'the accepted chance of running out') / 100,
-      inflation: need('inflation', 'inflation') / 100,
       inflationRisk: { spread: Math.max(0, need('inflSpread', 'how much inflation varies')) / 100, spikeYears: Math.max(0, need('inflSpike', 'how often inflation spikes')) },
       historyCut: 0,
       fireType: radio('fire'),
@@ -1963,6 +1965,7 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
       kids: $$('.kid').map((row) => [$('.kid-year', row).value, $('.kid-cost', row).value]),
       dirty: $$('input[data-scale]').filter((el) => el.dataset.dirty && el.id).map((el) => el.id),
       mode: mode(),
+      ret: 'nominal',
     };
   }
 
@@ -1970,7 +1973,16 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
   function restore(s) {
     $('#country').value = s.vals.country;
     applyCountry();
-    Object.entries({ ...initialSnap.vals, ...s.vals }).forEach(([k, v]) => {
+    const vals = { ...initialSnap.vals, ...s.vals };
+    // Plans saved before 2026-11-20 held returns after inflation: add their inflation back.
+    if (s.ret !== 'nominal') {
+      const i = parseFloat(String(vals.inflation).replace(',', '.')) || 0;
+      Object.keys(s.vals).filter((k) => /^(r-|pGrowth$)/.test(k)).forEach((k) => {
+        const v = parseFloat(String(s.vals[k]).replace(',', '.'));
+        if (!isNaN(v)) vals[k] = String(+(((1 + v / 100) * (1 + i / 100) - 1) * 100).toFixed(2));
+      });
+    }
+    Object.entries(vals).forEach(([k, v]) => {
       if (k.startsWith('r:')) {
         const el = $(`#plan input[name="${k.slice(2)}"][value="${v}"]`);
         if (el) el.checked = true;
@@ -2086,7 +2098,7 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
       ['Home', i.housing.kind === 'owned' ? 'paid off' : `${i.housing.kind}, ${c(i.housing.payment)}`],
       ['Children', String(i.children.length)],
       ['Already invested', c(i.existing)],
-      ['Portfolio', i.single ? `${pctN(i.single.growth)} growth, ${pctN(i.single.vol)} volatility` : 'by asset'],
+      ['Portfolio', i.single ? `${pctN(i.single.growth)} return, ${pctN(i.single.vol)} volatility` : 'by asset'],
       ['Split US/World/Corp/Gov/Metals', i.single ? '–' : alloc],
       ['When money goes in', i.timing === 'dip' ? `after a ${pctN(i.buyDrop)} fall` : (TIMING_NAMES[i.timing] || TIMING_NAMES.now).toLowerCase()],
       ['New money buys', i.buyMode === 'rebal' ? 'what has fallen behind' : i.buyMode === 'split' ? 'by the split' : 'rebalanced monthly (older version)'],
@@ -2148,7 +2160,7 @@ body[data-guided] .plan .grp-b > :not([data-now]) { display: none !important; }
   // Minimal's questions one at a time, using the plan's own fields; then Minimal with results.
   let gStep = 0; // position in guideSteps()
   const guided = () => document.body.hasAttribute('data-guided');
-  const guideSteps = () => GUIDE.map((_, n) => n).filter((n) => n && !(n === 9 && radio('pmode') === 'single'));
+  const guideSteps = () => GUIDE.map((_, n) => n).filter((n) => n && !(n === 10 && radio('pmode') === 'single'));
   const stepOf = (id) => {
     const el = id && $('#' + id);
     const s = el && el.closest('[data-step]');
